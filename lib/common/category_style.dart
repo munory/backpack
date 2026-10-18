@@ -60,13 +60,19 @@ final _colorByKey = {for (final o in categoryColorOptions) o.key: o.color};
 IconData iconForCategory(Category category) =>
     _iconByKey[category.icon] ?? iconForPackType(category.packType);
 
-/// A category's color — same fallback logic as [iconForCategory].
-Color colorForCategoryValue(Category category) =>
-    _colorByKey[category.color] ?? colorForPackType(category.packType);
+/// A category's color — same fallback logic as [iconForCategory]. The
+/// user-pickable colors are fixed values tuned for the light cream page;
+/// on a dark card they're lifted toward the cream text color a bit so icons stay vivid
+/// instead of sinking into the background.
+Color colorForCategoryValue(Category category) {
+  final picked = _colorByKey[category.color];
+  if (picked == null) return colorForPackType(category.packType);
+  return AppColors.isDark ? Color.lerp(picked, AppColors.textPrimary, 0.2)! : picked;
+}
 
 /// Lighter tint of [colorForCategoryValue], for the icon badge background.
 Color lightColorForCategoryValue(Category category) {
   final key = category.color;
   if (key == null) return lightColorForPackType(category.packType);
-  return colorForCategoryValue(category).withValues(alpha: 0.22);
+  return colorForCategoryValue(category).withValues(alpha: AppColors.isDark ? 0.26 : 0.22);
 }

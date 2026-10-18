@@ -205,7 +205,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
                             children: [
                               Text(
                                 _weightUnit,
-                                style: const TextStyle(color: AppColors.textPrimary),
+                                style: TextStyle(color: AppColors.textPrimary),
                               ),
                               const Icon(Icons.arrow_drop_down, size: 18),
                             ],
@@ -301,7 +301,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 8),
-              Text(_error!, style: const TextStyle(color: AppColors.overWeight)),
+              Text(_error!, style: TextStyle(color: AppColors.overWeight)),
             ],
             const SizedBox(height: 32),
             PrimaryButton(

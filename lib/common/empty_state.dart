@@ -42,7 +42,7 @@ class EmptyStateView extends StatelessWidget {
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
               ),
             ],
             if (ctaLabel != null) ...[

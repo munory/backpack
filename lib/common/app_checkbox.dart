@@ -39,7 +39,7 @@ class AppCheckbox extends StatelessWidget {
                 duration: const Duration(milliseconds: 120),
                 width: value ? 8 : 0,
                 height: value ? 8 : 0,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.accent,
                   shape: BoxShape.circle,
                 ),

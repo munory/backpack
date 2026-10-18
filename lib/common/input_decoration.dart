@@ -6,10 +6,12 @@ import 'theme.dart';
 /// fields and pickers are pixel-identical regardless of what's inside them.
 const kFieldHeight = 44.0;
 
-/// Standard border/shape for every field and selector in the app.
-final _fieldBorder = OutlineInputBorder(
-  borderSide: BorderSide(color: AppColors.textPrimary.withValues(alpha: 0.2)),
-);
+/// Standard border/shape for every field and selector in the app. A getter,
+/// not a value computed once — it must re-read [AppColors.textPrimary]
+/// every time to follow the system's light/dark setting.
+OutlineInputBorder get _fieldBorder => OutlineInputBorder(
+      borderSide: BorderSide(color: AppColors.textPrimary.withValues(alpha: 0.2)),
+    );
 
 /// The single field style used across every form in the app: outlined,
 /// rounded, compact height, no floating label — labels are a plain
@@ -22,7 +24,7 @@ InputDecoration appFieldDecoration({String? hint}) {
     border: _fieldBorder,
     enabledBorder: _fieldBorder,
     focusedBorder: _fieldBorder.copyWith(
-      borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+      borderSide: BorderSide(color: AppColors.accent, width: 1.5),
     ),
     isDense: true,
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

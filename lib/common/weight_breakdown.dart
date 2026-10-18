@@ -88,7 +88,7 @@ class _LegendItem extends StatelessWidget {
               decoration: BoxDecoration(color: colorForPackType(type), shape: BoxShape.circle),
             ),
             const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            Text(label, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
           ],
         ),
         const SizedBox(height: 2),

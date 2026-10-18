@@ -58,8 +58,10 @@ int _totalWeight(List<Item> items) =>
 
 /// An item's pack type: its category's, if it has one, else whatever it
 /// declared for itself (an uncategorized item still needs to count
-/// somewhere), falling back to gear if somehow neither is set.
-PackType _effectivePackType(Item item, Map<int, Category> categoryById) {
+/// somewhere), falling back to gear if somehow neither is set. Public
+/// because the gear list's section filter needs the same resolution the
+/// weight totals use.
+PackType effectivePackType(Item item, Map<int, Category> categoryById) {
   final category = item.categoryId == null ? null : categoryById[item.categoryId];
   return category?.packType ?? item.packType ?? PackType.gear;
 }
@@ -68,7 +70,7 @@ Map<PackType, int> _weightByPackType(List<Item> items, List<Category> categories
   final categoryById = {for (final c in categories) c.id: c};
   final totals = {for (final t in PackType.values) t: 0};
   for (final item in items) {
-    final type = _effectivePackType(item, categoryById);
+    final type = effectivePackType(item, categoryById);
     totals[type] = totals[type]! + itemTotalGrams(item);
   }
   return totals;

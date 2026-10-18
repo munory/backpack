@@ -1451,7 +1451,17 @@ class $AppSettingsTable extends AppSettings
     ),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, activeTripId];
+  late final GeneratedColumnWithTypeConverter<AppThemeMode, int> themeMode =
+      GeneratedColumn<int>(
+        'theme_mode',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      ).withConverter<AppThemeMode>($AppSettingsTable.$converterthemeMode);
+  @override
+  List<GeneratedColumn> get $columns => [id, activeTripId, themeMode];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1493,6 +1503,12 @@ class $AppSettingsTable extends AppSettings
         DriftSqlType.int,
         data['${effectivePrefix}active_trip_id'],
       ),
+      themeMode: $AppSettingsTable.$converterthemeMode.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}theme_mode'],
+        )!,
+      ),
     );
   }
 
@@ -1500,18 +1516,31 @@ class $AppSettingsTable extends AppSettings
   $AppSettingsTable createAlias(String alias) {
     return $AppSettingsTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<AppThemeMode, int, int> $converterthemeMode =
+      const EnumIndexConverter<AppThemeMode>(AppThemeMode.values);
 }
 
 class AppSetting extends DataClass implements Insertable<AppSetting> {
   final int id;
   final int? activeTripId;
-  const AppSetting({required this.id, this.activeTripId});
+  final AppThemeMode themeMode;
+  const AppSetting({
+    required this.id,
+    this.activeTripId,
+    required this.themeMode,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     if (!nullToAbsent || activeTripId != null) {
       map['active_trip_id'] = Variable<int>(activeTripId);
+    }
+    {
+      map['theme_mode'] = Variable<int>(
+        $AppSettingsTable.$converterthemeMode.toSql(themeMode),
+      );
     }
     return map;
   }
@@ -1522,6 +1551,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       activeTripId: activeTripId == null && nullToAbsent
           ? const Value.absent()
           : Value(activeTripId),
+      themeMode: Value(themeMode),
     );
   }
 
@@ -1533,6 +1563,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     return AppSetting(
       id: serializer.fromJson<int>(json['id']),
       activeTripId: serializer.fromJson<int?>(json['activeTripId']),
+      themeMode: $AppSettingsTable.$converterthemeMode.fromJson(
+        serializer.fromJson<int>(json['themeMode']),
+      ),
     );
   }
   @override
@@ -1541,15 +1574,20 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'activeTripId': serializer.toJson<int?>(activeTripId),
+      'themeMode': serializer.toJson<int>(
+        $AppSettingsTable.$converterthemeMode.toJson(themeMode),
+      ),
     };
   }
 
   AppSetting copyWith({
     int? id,
     Value<int?> activeTripId = const Value.absent(),
+    AppThemeMode? themeMode,
   }) => AppSetting(
     id: id ?? this.id,
     activeTripId: activeTripId.present ? activeTripId.value : this.activeTripId,
+    themeMode: themeMode ?? this.themeMode,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -1557,6 +1595,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       activeTripId: data.activeTripId.present
           ? data.activeTripId.value
           : this.activeTripId,
+      themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
     );
   }
 
@@ -1564,46 +1603,58 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   String toString() {
     return (StringBuffer('AppSetting(')
           ..write('id: $id, ')
-          ..write('activeTripId: $activeTripId')
+          ..write('activeTripId: $activeTripId, ')
+          ..write('themeMode: $themeMode')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, activeTripId);
+  int get hashCode => Object.hash(id, activeTripId, themeMode);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is AppSetting &&
           other.id == this.id &&
-          other.activeTripId == this.activeTripId);
+          other.activeTripId == this.activeTripId &&
+          other.themeMode == this.themeMode);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<int> id;
   final Value<int?> activeTripId;
+  final Value<AppThemeMode> themeMode;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.activeTripId = const Value.absent(),
+    this.themeMode = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
     this.activeTripId = const Value.absent(),
+    this.themeMode = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
     Expression<int>? activeTripId,
+    Expression<int>? themeMode,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (activeTripId != null) 'active_trip_id': activeTripId,
+      if (themeMode != null) 'theme_mode': themeMode,
     });
   }
 
-  AppSettingsCompanion copyWith({Value<int>? id, Value<int?>? activeTripId}) {
+  AppSettingsCompanion copyWith({
+    Value<int>? id,
+    Value<int?>? activeTripId,
+    Value<AppThemeMode>? themeMode,
+  }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       activeTripId: activeTripId ?? this.activeTripId,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 
@@ -1616,6 +1667,11 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     if (activeTripId.present) {
       map['active_trip_id'] = Variable<int>(activeTripId.value);
     }
+    if (themeMode.present) {
+      map['theme_mode'] = Variable<int>(
+        $AppSettingsTable.$converterthemeMode.toSql(themeMode.value),
+      );
+    }
     return map;
   }
 
@@ -1623,7 +1679,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   String toString() {
     return (StringBuffer('AppSettingsCompanion(')
           ..write('id: $id, ')
-          ..write('activeTripId: $activeTripId')
+          ..write('activeTripId: $activeTripId, ')
+          ..write('themeMode: $themeMode')
           ..write(')'))
         .toString();
   }
@@ -3205,9 +3262,17 @@ typedef $$TripItemsTableProcessedTableManager =
       PrefetchHooks Function({bool tripId, bool itemId})
     >;
 typedef $$AppSettingsTableCreateCompanionBuilder =
-    AppSettingsCompanion Function({Value<int> id, Value<int?> activeTripId});
+    AppSettingsCompanion Function({
+      Value<int> id,
+      Value<int?> activeTripId,
+      Value<AppThemeMode> themeMode,
+    });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
-    AppSettingsCompanion Function({Value<int> id, Value<int?> activeTripId});
+    AppSettingsCompanion Function({
+      Value<int> id,
+      Value<int?> activeTripId,
+      Value<AppThemeMode> themeMode,
+    });
 
 final class $$AppSettingsTableReferences
     extends BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting> {
@@ -3243,6 +3308,12 @@ class $$AppSettingsTableFilterComposer
   ColumnFilters<int> get id => $composableBuilder(
     column: $table.id,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<AppThemeMode, AppThemeMode, int>
+  get themeMode => $composableBuilder(
+    column: $table.themeMode,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   $$TripsTableFilterComposer get activeTripId {
@@ -3283,6 +3354,11 @@ class $$AppSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get themeMode => $composableBuilder(
+    column: $table.themeMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TripsTableOrderingComposer get activeTripId {
     final $$TripsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3318,6 +3394,9 @@ class $$AppSettingsTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<AppThemeMode, int> get themeMode =>
+      $composableBuilder(column: $table.themeMode, builder: (column) => column);
 
   $$TripsTableAnnotationComposer get activeTripId {
     final $$TripsTableAnnotationComposer composer = $composerBuilder(
@@ -3373,14 +3452,21 @@ class $$AppSettingsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<int?> activeTripId = const Value.absent(),
-              }) => AppSettingsCompanion(id: id, activeTripId: activeTripId),
+                Value<AppThemeMode> themeMode = const Value.absent(),
+              }) => AppSettingsCompanion(
+                id: id,
+                activeTripId: activeTripId,
+                themeMode: themeMode,
+              ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 Value<int?> activeTripId = const Value.absent(),
+                Value<AppThemeMode> themeMode = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 activeTripId: activeTripId,
+                themeMode: themeMode,
               ),
           withReferenceMapper: (p0) => p0
               .map(

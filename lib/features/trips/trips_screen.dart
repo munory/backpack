@@ -14,7 +14,10 @@ class TripsScreen extends ConsumerWidget {
     final trip = ref.watch(activeTripProvider).value;
 
     if (trip == null) {
-      return const CreateTripScreen();
+      // Not `const` — see the comment on `home:` in main.dart: a canonicalized
+      // const instance here would never rebuild on a brightness change even
+      // though TripsScreen's own build() just did.
+      return CreateTripScreen();
     }
 
     return Center(
@@ -29,10 +32,10 @@ class TripsScreen extends ConsumerWidget {
               trip.targetWeightGrams == null
                   ? 'Цель не задана'
                   : 'Цель: ${formatKg(trip.targetWeightGrams!)}',
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Управление составом похода и создание новых поездок — скоро.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary),

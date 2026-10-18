@@ -153,7 +153,7 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        content: const Text(
+        content: Text(
           'Пока нет ни одной категории — создайте первую, и потом '
           'сможете сделать её родителем для новых.',
           style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
@@ -274,7 +274,7 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
-                Text(_error!, style: const TextStyle(color: AppColors.overWeight)),
+                Text(_error!, style: TextStyle(color: AppColors.overWeight)),
               ],
               const SizedBox(height: 24),
               Row(

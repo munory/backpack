@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../common/category_actions.dart';
 import '../../common/category_card.dart';
 import '../../common/category_form_sheet.dart';
 import '../../common/empty_state.dart';
@@ -230,27 +231,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onDestructiveAction: (item) =>
                   ref.read(databaseProvider).setItemPacked(item.id, false),
               onEditCategory: (category) => showCategoryFormSheet(context, editing: category),
-              onDeleteCategory: (category) async {
-                final ok = await ref.read(databaseProvider).deleteCategory(category.id);
-                if (!ok && context.mounted) {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      content: const Text(
-                        'Сначала удали или перенеси дочерние категории — '
-                        'у этой категории ещё есть вложенные.',
-                        style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Понятно'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-              },
+              onDeleteCategory: (category) => deleteCategoryWithConfirmation(
+                context,
+                ref.read(databaseProvider),
+                category,
+              ),
             ),
         ],
       ),

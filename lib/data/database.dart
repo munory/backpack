@@ -13,6 +13,11 @@ enum PackType { food, gear, water }
 /// Rough condition of a gear item, set when adding it.
 enum ItemCondition { newItem, needsReplacement, wornOut }
 
+/// The app's own light/dark preference — independent of the system
+/// setting, since someone may want this app dark while the rest of their
+/// phone stays light (or vice versa). [system] defers to the phone.
+enum AppThemeMode { system, light, dark }
+
 /// Display labels for [ItemCondition] — the single source of truth so the
 /// add/edit form and the item list always agree on wording.
 const conditionLabels = {
@@ -94,12 +99,14 @@ class TripItems extends Table {
   Set<Column> get primaryKey => {tripId, itemId};
 }
 
-/// Single-row table holding app-wide state, currently just which trip is
-/// the active one shown on the dashboard.
+/// Single-row table holding app-wide state: which trip is the active one
+/// shown on the dashboard, and the user's own light/dark preference.
 class AppSettings extends Table {
   IntColumn get id => integer().withDefault(const Constant(1))();
   IntColumn get activeTripId =>
       integer().nullable().references(Trips, #id)();
+  IntColumn get themeMode =>
+      intEnum<AppThemeMode>().withDefault(const Constant(0))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -109,8 +116,12 @@ class AppSettings extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  /// For tests only — takes an executor directly (an in-memory database)
+  /// instead of opening the real file on disk via [_openConnection].
+  AppDatabase.forTesting(super.executor);
+
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -119,15 +130,30 @@ class AppDatabase extends _$AppDatabase {
           await into(appSettings).insert(const AppSettingsCompanion());
           await _seedDefaultCategories();
         },
-        // Dev-only project, no real user data to preserve yet: wipe and
-        // recreate on any schema bump instead of writing real migrations.
         onUpgrade: (m, from, to) async {
-          for (final table in allTables) {
-            await m.deleteTable(table.actualTableName);
+          if (from < 13) {
+            // Nothing below schema 13 was ever a real install — only test
+            // data on dev emulators — so this old dev-only path (wipe +
+            // recreate + reseed) stays as a safety net for it. Every real
+            // migration from here on must be additive; see below.
+            for (final table in allTables) {
+              await m.deleteTable(table.actualTableName);
+            }
+            await m.createAll();
+            await into(appSettings).insert(const AppSettingsCompanion());
+            await _seedDefaultCategories();
+            return;
           }
-          await m.createAll();
-          await into(appSettings).insert(const AppSettingsCompanion());
-          await _seedDefaultCategories();
+
+          // from >= 13: real installs may exist — never wipe. Add one
+          // `if (from < N) ...` step per schema bump from here on, each
+          // doing only the additive change that version introduced (new
+          // column/table/etc.), and nothing here may re-seed defaults or
+          // re-insert the AppSettings row — both already exist for a real
+          // install.
+          if (from < 14) {
+            await m.addColumn(appSettings, appSettings.themeMode);
+          }
         },
       );
 
@@ -206,6 +232,10 @@ class AppDatabase extends _$AppDatabase {
     return (update(trips)..where((t) => t.id.equals(tripId))).write(
       TripsCompanion(targetWeightGrams: Value(targetWeightGrams)),
     );
+  }
+
+  Future<void> updateThemeMode(AppThemeMode mode) {
+    return update(appSettings).write(AppSettingsCompanion(themeMode: Value(mode)));
   }
 
   /// Adds an item to the master gear closet. Not tied to any trip — packing

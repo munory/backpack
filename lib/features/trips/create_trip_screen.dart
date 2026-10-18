@@ -62,7 +62,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.backpack, size: 72, color: AppColors.accent),
+            Icon(Icons.backpack, size: 72, color: AppColors.accent),
             const SizedBox(height: 16),
             const Text(
               'Новый поход',
@@ -70,7 +70,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Дай походу имя. Целевой вес можно задать сейчас или позже.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary),
@@ -96,7 +96,7 @@ class _CreateTripScreenState extends ConsumerState<CreateTripScreen> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 8),
-              Text(_error!, style: const TextStyle(color: AppColors.overWeight)),
+              Text(_error!, style: TextStyle(color: AppColors.overWeight)),
             ],
             const SizedBox(height: 20),
             PrimaryButton(

@@ -3,24 +3,78 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'common/navigation.dart';
 import 'common/theme.dart';
+import 'data/database.dart';
+import 'data/providers.dart';
 import 'features/add_item/add_item_screen.dart';
 import 'features/dashboard/dashboard_screen.dart';
 import 'features/gear_list/gear_list_screen.dart';
+import 'features/profile/profile_screen.dart';
 import 'features/trips/trips_screen.dart';
 
-void main() {
-  runApp(const ProviderScope(child: BackpackApp()));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // One connection, opened here and handed to Riverpod, rather than letting
+  // databaseProvider open its own — the app's theme preference has to be
+  // read before the first frame, so something has to open the database
+  // before runApp regardless.
+  final db = AppDatabase();
+  final settings = await db.select(db.appSettings).getSingle();
+  appThemeMode.value = settings.themeMode;
+
+  runApp(
+    ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: const BackpackApp(),
+    ),
+  );
 }
 
-class BackpackApp extends StatelessWidget {
+/// A plain `const HomeShell()` below (or a `StatelessWidget` here) would let
+/// Flutter treat the whole app subtree as unchanged when the system's
+/// light/dark setting flips — [AppColors] reads the platform brightness
+/// directly rather than through an `InheritedWidget`, so nothing "depends"
+/// on it in the way Flutter's rebuild tracking looks for. Observing
+/// [WidgetsBindingObserver] and forcing a `setState` on change is what
+/// actually gets every descendant to rebuild and re-read the new colors.
+class BackpackApp extends StatefulWidget {
   const BackpackApp({super.key});
+
+  @override
+  State<BackpackApp> createState() => _BackpackAppState();
+}
+
+class _BackpackAppState extends State<BackpackApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // The system-brightness case is covered by the observer below; this
+    // covers the user's own choice from Профиль changing instead.
+    appThemeMode.addListener(_onThemeChanged);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    appThemeMode.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() => setState(() {});
+
+  @override
+  void didChangePlatformBrightness() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Backpack',
       theme: buildAppTheme(),
-      home: const HomeShell(),
+      // Not `const` — a `const HomeShell()` would be the exact same object
+      // reference on every rebuild, and Flutter skips rebuilding a child
+      // entirely when it's handed the identical widget instance again, which
+      // would defeat the observer above.
+      home: HomeShell(),
     );
   }
 }
@@ -33,15 +87,18 @@ class HomeShell extends ConsumerWidget {
     final tab = ref.watch(currentTabProvider);
 
     return Scaffold(
+      // Not `const` here either, for the same reason as `home:` above — a
+      // canonicalized const screen widget would never rebuild on a
+      // brightness change even though its own ancestor just did.
       body: switch (tab) {
-        0 => const DashboardScreen(),
-        1 => const GearListScreen(),
-        2 => const TripsScreen(),
-        _ => const Center(child: Text('Скоро здесь что-то будет')),
+        0 => DashboardScreen(),
+        1 => GearListScreen(),
+        2 => TripsScreen(),
+        _ => ProfileScreen(),
       },
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
-          color: AppColors.background,
+          color: AppColors.card,
           boxShadow: [
             BoxShadow(
               color: AppColors.textPrimary.withValues(alpha: 0.08),
@@ -149,7 +206,7 @@ class _AddButton extends StatelessWidget {
       child: Container(
         width: 52,
         height: 52,
-        decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+        decoration: BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
         child: const Icon(Icons.add, color: Colors.white, size: 26),
       ),
     );
