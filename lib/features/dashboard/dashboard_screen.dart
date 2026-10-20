@@ -7,12 +7,15 @@ import '../../common/category_form_sheet.dart';
 import '../../common/empty_state.dart';
 import '../../common/input_decoration.dart';
 import '../../common/navigation.dart';
+import '../../common/text_format.dart';
 import '../../common/theme.dart';
+import '../../common/trip_switcher.dart';
 import '../../common/weight_breakdown.dart';
 import '../../common/weight_format.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 import '../add_item/add_item_screen.dart';
+import '../packing/packing_screen.dart';
 
 enum _WeightView { total, base }
 
@@ -118,15 +121,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final rootTotals =
         ref.watch(rootCategoryTotalsProvider).where((e) => e.weightGrams > 0).toList();
     final itemsAsync = ref.watch(activeTripItemsProvider);
+    // The trip's items carry the *trip's* quantity (see
+    // activeTripItemsProvider); editing or copying must start from the
+    // real closet row, or saving would overwrite how many you own.
+    final closetById = {
+      for (final i in ref.watch(allItemsProvider).value ?? const <Item>[]) i.id: i,
+    };
 
     if (rootTotals.isEmpty) {
-      return EmptyStateView(
+      final empty = EmptyStateView(
         icon: Icons.backpack_outlined,
         title: 'Твой рюкзак пуст',
         subtitle: 'Отметь снаряжение как "в рюкзаке" в Инвентаре, чтобы увидеть вес.',
         ctaLabel: 'Перейти в Инвентарь',
         ctaIcon: Icons.arrow_forward,
         onCta: () => ref.read(currentTabProvider.notifier).state = 1,
+      );
+      if (trip == null) return empty;
+      // Keep the trip switcher even on an empty trip — a freshly created
+      // trip starts empty, and you may just want to switch back.
+      return SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: _TripSwitcher(trip: trip),
+            ),
+            Expanded(child: empty),
+          ],
+        ),
       );
     }
 
@@ -142,6 +165,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
         children: [
+          _TripSwitcher(trip: trip),
+          const SizedBox(height: 12),
           HeroWeightCard(
             child: Column(
               // Without this, WeightBar (and anything else with no intrinsic
@@ -203,6 +228,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          _PackingButton(rows: ref.watch(activeTripRowsProvider).value ?? const {}),
           const SizedBox(height: 20),
           for (final entry in rootTotals)
             CategoryCard(
@@ -216,15 +243,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       : i.categoryId == null)
                   .toList(),
               onEditItem: (item) => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => AddItemScreen(editing: item)),
+                MaterialPageRoute(
+                  builder: (_) => AddItemScreen(editing: closetById[item.id] ?? item),
+                ),
               ),
               onDuplicateItem: (item) async {
-                final duplicated = await ref.read(databaseProvider).duplicateItem(item);
+                final duplicated =
+                    await ref.read(databaseProvider).duplicateItem(closetById[item.id] ?? item);
                 if (context.mounted) {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => AddItemScreen(editing: duplicated)),
                   );
                 }
+              },
+              ownedQuantities: {for (final e in closetById.entries) e.key: e.value.quantity},
+              onTripQuantityChanged: (item, quantity) {
+                final owned = closetById[item.id]?.quantity;
+                // Back at "all of them" → store null, so raising the closet
+                // quantity later still means "take all" on this trip.
+                ref.read(databaseProvider).setTripItemQuantity(
+                      trip.id,
+                      item.id,
+                      quantity == owned ? null : quantity,
+                    );
               },
               destructiveActionLabel: 'Убрать из похода',
               destructiveActionDangerous: false,
@@ -294,3 +335,125 @@ class _WeightViewToggle extends StatelessWidget {
   }
 }
 
+
+/// "Карелия на выходные ▾ · 12–14 окт" above the weight card — tap to jump
+/// to another trip without leaving Главная. An anchored menu rather than a
+/// sheet, same as every other picker in the app.
+class _TripSwitcher extends ConsumerWidget {
+  const _TripSwitcher({required this.trip});
+
+  final Trip trip;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dates = formatTripDates(trip.startDate, trip.endDate);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => showTripSwitcherMenu(context, ref, trip),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      trip.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.expand_more, color: AppColors.textSecondary.withValues(alpha: 0.7)),
+                ],
+              ),
+              if (dates != null)
+                Text(
+                  dates,
+                  style: TextStyle(
+                    color: AppColors.textSecondary.withValues(alpha: 0.7),
+                    fontSize: 13,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Чек-лист сборов · 12 из 30" — opens the packing checklist. The
+/// subtitle is there because "packing" alone was easy to mistake for the
+/// Инвентарь checkboxes (which plan the list, not tick off the bag).
+class _PackingButton extends StatelessWidget {
+  const _PackingButton({required this.rows});
+
+  final Map<int, TripItem> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = rows.length;
+    final packed = rows.values.where((r) => r.inBag).length;
+    final done = total > 0 && packed == total;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: AppColors.cardShadow,
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const PackingScreen()),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                done ? Icons.check_circle_outline : Icons.checklist,
+                color: done ? AppColors.good : AppColors.accent,
+                size: 22,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      done ? 'Рюкзак собран' : 'Чек-лист сборов',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      'Отмечай, что уже лежит в рюкзаке',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary.withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '$packed из $total',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: AppColors.textSecondary.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right, color: AppColors.textSecondary.withValues(alpha: 0.6)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

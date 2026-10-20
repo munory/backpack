@@ -45,6 +45,8 @@ class CategoryCard extends StatefulWidget {
     this.onEditCategory,
     this.onDeleteCategory,
     this.onAddItem,
+    this.ownedQuantities,
+    this.onTripQuantityChanged,
   });
 
   final String title;
@@ -66,6 +68,11 @@ class CategoryCard extends StatefulWidget {
   /// opens adding an item straight into this category, instead of an
   /// expand arrow that just reveals emptiness.
   final VoidCallback? onAddItem;
+
+  /// Item id → how many the closet owns. With [onTripQuantityChanged], items
+  /// owned more than once get a "2 из 5 ▾" picker (Dashboard).
+  final Map<int, int>? ownedQuantities;
+  final void Function(Item item, int quantity)? onTripQuantityChanged;
 
   @override
   State<CategoryCard> createState() => _CategoryCardState();
@@ -199,6 +206,8 @@ class _CategoryCardState extends State<CategoryCard> {
                                 packTypeLabel: category == null
                                     ? packTypeLabels[item.packType ?? PackType.gear]
                                     : null,
+                                ownedQuantity: widget.ownedQuantities?[item.id],
+                                onTripQuantityChanged: widget.onTripQuantityChanged,
                               ),
                           ],
                         ),
@@ -268,11 +277,19 @@ class _ItemRow extends StatelessWidget {
     required this.onDestructive,
     required this.destructiveDangerous,
     this.packTypeLabel,
+    this.ownedQuantity,
+    this.onTripQuantityChanged,
   });
 
   final Item item;
   final bool? packed;
   final String? packTypeLabel;
+
+  /// How many the closet owns — with [onTripQuantityChanged], shows the
+  /// "2 из 5 ▾" picker (Dashboard only, where [item]'s own quantity is
+  /// already the trip's).
+  final int? ownedQuantity;
+  final void Function(Item item, int quantity)? onTripQuantityChanged;
   final void Function(Item item, bool packed)? onTogglePacked;
   final void Function(Item item)? onEdit;
   final void Function(Item item)? onDuplicate;
@@ -297,9 +314,6 @@ class _ItemRow extends StatelessWidget {
         Offset.zero & overlay.size,
       ),
       items: [
-        // Tapping the row already does this — repeating it here is just
-        // for discoverability, since long-press is where people look for
-        // "what can I do with this" first.
         if (canEdit) const PopupMenuItem(value: 'edit', child: Text('Редактировать')),
         if (canDuplicate) const PopupMenuItem(value: 'duplicate', child: Text('Дублировать')),
         if (canDestroy)
@@ -338,6 +352,8 @@ class _ItemRow extends StatelessWidget {
     // checkbox-width further from the edge than it needs to.
     final hasCheckbox = packed != null;
     final indent = hasCheckbox ? leadWidth + leadSpacing : 0.0;
+    final hasTripPicker =
+        onTripQuantityChanged != null && ownedQuantity != null && ownedQuantity! > 1;
 
     return InkWell(
       borderRadius: BorderRadius.circular(8),
@@ -365,9 +381,25 @@ class _ItemRow extends StatelessWidget {
                   const SizedBox(width: leadSpacing),
                 ],
                 Expanded(
-                  child: itemNameText(
-                    item,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Flexible(
+                        child: itemNameText(
+                          item,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                          showQuantity: !hasTripPicker,
+                        ),
+                      ),
+                      if (hasTripPicker) ...[
+                        const SizedBox(width: 6),
+                        _TripQuantityPicker(
+                          value: item.quantity,
+                          max: ownedQuantity!,
+                          onChanged: (q) => onTripQuantityChanged!(item, q),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -403,6 +435,80 @@ class _ItemRow extends StatelessWidget {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// "2 из 5 ▾" right after an item's name — how many of an owned item go on
+/// this trip. Sits where "(2 шт.)" would, so it clearly belongs to the
+/// item, and keeps the row the same height as every other. Tap → "Беру N".
+/// Bottoms out at 1: taking none is "Убрать из похода" in the row's menu.
+class _TripQuantityPicker extends StatelessWidget {
+  const _TripQuantityPicker({required this.value, required this.max, required this.onChanged});
+
+  final int value;
+  final int max;
+  final ValueChanged<int> onChanged;
+
+  Future<void> _open(BuildContext context) async {
+    final box = context.findRenderObject()! as RenderBox;
+    final overlay = Navigator.of(context).overlay!.context.findRenderObject()! as RenderBox;
+    final topLeft = box.localToGlobal(Offset(0, box.size.height), ancestor: overlay);
+    final bottomRight = box.localToGlobal(box.size.bottomRight(Offset.zero), ancestor: overlay);
+    final selected = await showMenu<int>(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromPoints(topLeft, bottomRight),
+        Offset.zero & overlay.size,
+      ),
+      items: [
+        for (var n = 1; n <= max; n++)
+          PopupMenuItem(
+            value: n,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Беру $n',
+                    style: TextStyle(
+                      color: n == value ? AppColors.accent : AppColors.textPrimary,
+                      fontWeight: n == value ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ),
+                if (n == value) Icon(Icons.check, size: 18, color: AppColors.accent),
+              ],
+            ),
+          ),
+      ],
+    );
+    if (selected != null && selected != value) onChanged(selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(6),
+      onTap: () => _open(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '$value из $max',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.accent,
+                fontWeight: FontWeight.w500,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+            Icon(Icons.expand_more, size: 16, color: AppColors.accent),
           ],
         ),
       ),

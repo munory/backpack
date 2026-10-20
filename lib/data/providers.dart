@@ -37,7 +37,27 @@ final activeTripProvider = StreamProvider<Trip?>((ref) {
       .watchSingleOrNull();
 });
 
-/// Items belonging to the active trip, live-updating.
+/// Every trip, newest first.
+final tripsProvider = StreamProvider<List<Trip>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return (db.select(db.trips)
+        ..orderBy([(t) => OrderingTerm.desc(t.createdAt), (t) => OrderingTerm.desc(t.id)]))
+      .watch();
+});
+
+/// How many of [item]'s owned units a trip takes — the trip's own number if
+/// it set one, else all of them, and never more than are actually owned
+/// (the closet quantity may have been lowered since).
+int tripQuantity(TripItem row, Item item) {
+  final wanted = row.quantity ?? item.quantity;
+  return wanted > item.quantity ? item.quantity : wanted;
+}
+
+/// Items belonging to the active trip, live-updating — each with its
+/// `quantity` replaced by how many go on *this* trip, so every weight total
+/// and "(N шт.)" label downstream reflects the trip without knowing about
+/// it. Not the closet row: anything that edits or copies the item itself
+/// must look it up in [allItemsProvider] by id instead.
 final activeTripItemsProvider = StreamProvider<List<Item>>((ref) {
   final db = ref.watch(databaseProvider);
   final trip = ref.watch(activeTripProvider).value;
@@ -46,7 +66,47 @@ final activeTripItemsProvider = StreamProvider<List<Item>>((ref) {
     innerJoin(db.tripItems, db.tripItems.itemId.equalsExp(db.items.id)),
   ])
     ..where(db.tripItems.tripId.equals(trip.id));
-  return query.watch().map((rows) => rows.map((r) => r.readTable(db.items)).toList());
+  return query.watch().map((rows) => [
+        for (final r in rows)
+          r.readTable(db.items).copyWith(
+                quantity: tripQuantity(r.readTable(db.tripItems), r.readTable(db.items)),
+              ),
+      ]);
+});
+
+/// The active trip's list rows (per-trip quantity, in-bag state), keyed by
+/// item id.
+final activeTripRowsProvider = StreamProvider<Map<int, TripItem>>((ref) {
+  final db = ref.watch(databaseProvider);
+  final trip = ref.watch(activeTripProvider).value;
+  if (trip == null) return Stream.value(const {});
+  return (db.select(db.tripItems)..where((t) => t.tripId.equals(trip.id)))
+      .watch()
+      .map((rows) => {for (final r in rows) r.itemId: r});
+});
+
+/// Per-trip weight and item count for the trips list, from one join over
+/// every trip's list.
+typedef TripSummary = ({int grams, int itemCount});
+
+final tripSummariesProvider = StreamProvider<Map<int, TripSummary>>((ref) {
+  final db = ref.watch(databaseProvider);
+  final query = db.select(db.tripItems).join([
+    innerJoin(db.items, db.items.id.equalsExp(db.tripItems.itemId)),
+  ]);
+  return query.watch().map((rows) {
+    final grams = <int, int>{};
+    final counts = <int, int>{};
+    for (final r in rows) {
+      final row = r.readTable(db.tripItems);
+      final item = r.readTable(db.items);
+      grams[row.tripId] = (grams[row.tripId] ?? 0) + item.weightGrams * tripQuantity(row, item);
+      counts[row.tripId] = (counts[row.tripId] ?? 0) + 1;
+    }
+    return {
+      for (final id in grams.keys) id: (grams: grams[id]!, itemCount: counts[id]!),
+    };
+  });
 });
 
 /// An item's contribution to any weight total — its per-unit weight times

@@ -18,3 +18,28 @@ String pluralizeRu(int n, String one, String few, String many) {
 
 String itemWord(int n) => pluralizeRu(n, 'вещь', 'вещи', 'вещей');
 String categoryWord(int n) => pluralizeRu(n, 'категория', 'категории', 'категорий');
+
+const _monthsShort = [
+  'янв', 'фев', 'мар', 'апр', 'мая', 'июн',
+  'июл', 'авг', 'сен', 'окт', 'ноя', 'дек',
+];
+
+/// A trip's dates as people write them: "12 окт", "12–14 окт",
+/// "30 окт – 2 ноя", with the year only when it isn't the current one.
+/// Null when there are no dates at all.
+String? formatTripDates(DateTime? start, DateTime? end, {DateTime? today}) {
+  if (start == null && end == null) return null;
+  final now = today ?? DateTime.now();
+  final from = start ?? end!;
+  final to = end ?? start!;
+  String day(DateTime d) {
+    final base = '${d.day} ${_monthsShort[d.month - 1]}';
+    return d.year != now.year ? '$base ${d.year}' : base;
+  }
+
+  if (from.year == to.year && from.month == to.month) {
+    if (from.day == to.day) return day(from);
+    return '${from.day}–${day(to)}';
+  }
+  return '${day(from)} – ${day(to)}';
+}

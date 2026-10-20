@@ -948,12 +948,52 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startDate = GeneratedColumn<DateTime>(
+    'start_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endDate = GeneratedColumn<DateTime>(
+    'end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDraftMeta = const VerificationMeta(
+    'isDraft',
+  );
+  @override
+  late final GeneratedColumn<bool> isDraft = GeneratedColumn<bool>(
+    'is_draft',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_draft" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     name,
     targetWeightGrams,
     createdAt,
+    startDate,
+    endDate,
+    isDraft,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -993,6 +1033,24 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    }
+    if (data.containsKey('is_draft')) {
+      context.handle(
+        _isDraftMeta,
+        isDraft.isAcceptableOrUnknown(data['is_draft']!, _isDraftMeta),
+      );
+    }
     return context;
   }
 
@@ -1018,6 +1076,18 @@ class $TripsTable extends Trips with TableInfo<$TripsTable, Trip> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}start_date'],
+      ),
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}end_date'],
+      ),
+      isDraft: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_draft'],
+      )!,
     );
   }
 
@@ -1032,11 +1102,24 @@ class Trip extends DataClass implements Insertable<Trip> {
   final String name;
   final int? targetWeightGrams;
   final DateTime createdAt;
+
+  /// Both optional — a trip can be planned before dates are known. A trip
+  /// whose [endDate] has passed is shown in the "Архив" group.
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  /// The scratch list for sizing up gear without a planned trip — created
+  /// automatically the first time something is ticked in Инвентарь with no
+  /// trip yet. Can later be turned into a real trip ("Превратить в поход").
+  final bool isDraft;
   const Trip({
     required this.id,
     required this.name,
     this.targetWeightGrams,
     required this.createdAt,
+    this.startDate,
+    this.endDate,
+    required this.isDraft,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1047,6 +1130,13 @@ class Trip extends DataClass implements Insertable<Trip> {
       map['target_weight_grams'] = Variable<int>(targetWeightGrams);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || startDate != null) {
+      map['start_date'] = Variable<DateTime>(startDate);
+    }
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<DateTime>(endDate);
+    }
+    map['is_draft'] = Variable<bool>(isDraft);
     return map;
   }
 
@@ -1058,6 +1148,13 @@ class Trip extends DataClass implements Insertable<Trip> {
           ? const Value.absent()
           : Value(targetWeightGrams),
       createdAt: Value(createdAt),
+      startDate: startDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startDate),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
+      isDraft: Value(isDraft),
     );
   }
 
@@ -1071,6 +1168,9 @@ class Trip extends DataClass implements Insertable<Trip> {
       name: serializer.fromJson<String>(json['name']),
       targetWeightGrams: serializer.fromJson<int?>(json['targetWeightGrams']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      startDate: serializer.fromJson<DateTime?>(json['startDate']),
+      endDate: serializer.fromJson<DateTime?>(json['endDate']),
+      isDraft: serializer.fromJson<bool>(json['isDraft']),
     );
   }
   @override
@@ -1081,6 +1181,9 @@ class Trip extends DataClass implements Insertable<Trip> {
       'name': serializer.toJson<String>(name),
       'targetWeightGrams': serializer.toJson<int?>(targetWeightGrams),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'startDate': serializer.toJson<DateTime?>(startDate),
+      'endDate': serializer.toJson<DateTime?>(endDate),
+      'isDraft': serializer.toJson<bool>(isDraft),
     };
   }
 
@@ -1089,6 +1192,9 @@ class Trip extends DataClass implements Insertable<Trip> {
     String? name,
     Value<int?> targetWeightGrams = const Value.absent(),
     DateTime? createdAt,
+    Value<DateTime?> startDate = const Value.absent(),
+    Value<DateTime?> endDate = const Value.absent(),
+    bool? isDraft,
   }) => Trip(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -1096,6 +1202,9 @@ class Trip extends DataClass implements Insertable<Trip> {
         ? targetWeightGrams.value
         : this.targetWeightGrams,
     createdAt: createdAt ?? this.createdAt,
+    startDate: startDate.present ? startDate.value : this.startDate,
+    endDate: endDate.present ? endDate.value : this.endDate,
+    isDraft: isDraft ?? this.isDraft,
   );
   Trip copyWithCompanion(TripsCompanion data) {
     return Trip(
@@ -1105,6 +1214,9 @@ class Trip extends DataClass implements Insertable<Trip> {
           ? data.targetWeightGrams.value
           : this.targetWeightGrams,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      isDraft: data.isDraft.present ? data.isDraft.value : this.isDraft,
     );
   }
 
@@ -1114,13 +1226,24 @@ class Trip extends DataClass implements Insertable<Trip> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('targetWeightGrams: $targetWeightGrams, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('isDraft: $isDraft')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, targetWeightGrams, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    targetWeightGrams,
+    createdAt,
+    startDate,
+    endDate,
+    isDraft,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1128,7 +1251,10 @@ class Trip extends DataClass implements Insertable<Trip> {
           other.id == this.id &&
           other.name == this.name &&
           other.targetWeightGrams == this.targetWeightGrams &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
+          other.isDraft == this.isDraft);
 }
 
 class TripsCompanion extends UpdateCompanion<Trip> {
@@ -1136,29 +1262,44 @@ class TripsCompanion extends UpdateCompanion<Trip> {
   final Value<String> name;
   final Value<int?> targetWeightGrams;
   final Value<DateTime> createdAt;
+  final Value<DateTime?> startDate;
+  final Value<DateTime?> endDate;
+  final Value<bool> isDraft;
   const TripsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.targetWeightGrams = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.isDraft = const Value.absent(),
   });
   TripsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
     this.targetWeightGrams = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.isDraft = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Trip> custom({
     Expression<int>? id,
     Expression<String>? name,
     Expression<int>? targetWeightGrams,
     Expression<DateTime>? createdAt,
+    Expression<DateTime>? startDate,
+    Expression<DateTime>? endDate,
+    Expression<bool>? isDraft,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (targetWeightGrams != null) 'target_weight_grams': targetWeightGrams,
       if (createdAt != null) 'created_at': createdAt,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (isDraft != null) 'is_draft': isDraft,
     });
   }
 
@@ -1167,12 +1308,18 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     Value<String>? name,
     Value<int?>? targetWeightGrams,
     Value<DateTime>? createdAt,
+    Value<DateTime?>? startDate,
+    Value<DateTime?>? endDate,
+    Value<bool>? isDraft,
   }) {
     return TripsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
       targetWeightGrams: targetWeightGrams ?? this.targetWeightGrams,
       createdAt: createdAt ?? this.createdAt,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      isDraft: isDraft ?? this.isDraft,
     );
   }
 
@@ -1191,6 +1338,15 @@ class TripsCompanion extends UpdateCompanion<Trip> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (startDate.present) {
+      map['start_date'] = Variable<DateTime>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<DateTime>(endDate.value);
+    }
+    if (isDraft.present) {
+      map['is_draft'] = Variable<bool>(isDraft.value);
+    }
     return map;
   }
 
@@ -1200,7 +1356,10 @@ class TripsCompanion extends UpdateCompanion<Trip> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('targetWeightGrams: $targetWeightGrams, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('isDraft: $isDraft')
           ..write(')'))
         .toString();
   }
@@ -1236,8 +1395,32 @@ class $TripItemsTable extends TripItems
       'REFERENCES items (id)',
     ),
   );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
   @override
-  List<GeneratedColumn> get $columns => [tripId, itemId];
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _inBagMeta = const VerificationMeta('inBag');
+  @override
+  late final GeneratedColumn<bool> inBag = GeneratedColumn<bool>(
+    'in_bag',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("in_bag" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [tripId, itemId, quantity, inBag];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1266,6 +1449,18 @@ class $TripItemsTable extends TripItems
     } else if (isInserting) {
       context.missing(_itemIdMeta);
     }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    }
+    if (data.containsKey('in_bag')) {
+      context.handle(
+        _inBagMeta,
+        inBag.isAcceptableOrUnknown(data['in_bag']!, _inBagMeta),
+      );
+    }
     return context;
   }
 
@@ -1283,6 +1478,14 @@ class $TripItemsTable extends TripItems
         DriftSqlType.int,
         data['${effectivePrefix}item_id'],
       )!,
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      ),
+      inBag: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}in_bag'],
+      )!,
     );
   }
 
@@ -1295,17 +1498,42 @@ class $TripItemsTable extends TripItems
 class TripItem extends DataClass implements Insertable<TripItem> {
   final int tripId;
   final int itemId;
-  const TripItem({required this.tripId, required this.itemId});
+
+  /// How many of the item's owned units go on this trip (5 gas cans owned,
+  /// 2 taken). Null means "all of them" — so raising the item's own
+  /// quantity later carries through without touching every trip.
+  final int? quantity;
+
+  /// Physically put in the bag while packing — a separate state from being
+  /// on the trip's list at all (planning vs. the night-before packing run).
+  final bool inBag;
+  const TripItem({
+    required this.tripId,
+    required this.itemId,
+    this.quantity,
+    required this.inBag,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['trip_id'] = Variable<int>(tripId);
     map['item_id'] = Variable<int>(itemId);
+    if (!nullToAbsent || quantity != null) {
+      map['quantity'] = Variable<int>(quantity);
+    }
+    map['in_bag'] = Variable<bool>(inBag);
     return map;
   }
 
   TripItemsCompanion toCompanion(bool nullToAbsent) {
-    return TripItemsCompanion(tripId: Value(tripId), itemId: Value(itemId));
+    return TripItemsCompanion(
+      tripId: Value(tripId),
+      itemId: Value(itemId),
+      quantity: quantity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quantity),
+      inBag: Value(inBag),
+    );
   }
 
   factory TripItem.fromJson(
@@ -1316,6 +1544,8 @@ class TripItem extends DataClass implements Insertable<TripItem> {
     return TripItem(
       tripId: serializer.fromJson<int>(json['tripId']),
       itemId: serializer.fromJson<int>(json['itemId']),
+      quantity: serializer.fromJson<int?>(json['quantity']),
+      inBag: serializer.fromJson<bool>(json['inBag']),
     );
   }
   @override
@@ -1324,15 +1554,28 @@ class TripItem extends DataClass implements Insertable<TripItem> {
     return <String, dynamic>{
       'tripId': serializer.toJson<int>(tripId),
       'itemId': serializer.toJson<int>(itemId),
+      'quantity': serializer.toJson<int?>(quantity),
+      'inBag': serializer.toJson<bool>(inBag),
     };
   }
 
-  TripItem copyWith({int? tripId, int? itemId}) =>
-      TripItem(tripId: tripId ?? this.tripId, itemId: itemId ?? this.itemId);
+  TripItem copyWith({
+    int? tripId,
+    int? itemId,
+    Value<int?> quantity = const Value.absent(),
+    bool? inBag,
+  }) => TripItem(
+    tripId: tripId ?? this.tripId,
+    itemId: itemId ?? this.itemId,
+    quantity: quantity.present ? quantity.value : this.quantity,
+    inBag: inBag ?? this.inBag,
+  );
   TripItem copyWithCompanion(TripItemsCompanion data) {
     return TripItem(
       tripId: data.tripId.present ? data.tripId.value : this.tripId,
       itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      inBag: data.inBag.present ? data.inBag.value : this.inBag,
     );
   }
 
@@ -1340,44 +1583,58 @@ class TripItem extends DataClass implements Insertable<TripItem> {
   String toString() {
     return (StringBuffer('TripItem(')
           ..write('tripId: $tripId, ')
-          ..write('itemId: $itemId')
+          ..write('itemId: $itemId, ')
+          ..write('quantity: $quantity, ')
+          ..write('inBag: $inBag')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(tripId, itemId);
+  int get hashCode => Object.hash(tripId, itemId, quantity, inBag);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is TripItem &&
           other.tripId == this.tripId &&
-          other.itemId == this.itemId);
+          other.itemId == this.itemId &&
+          other.quantity == this.quantity &&
+          other.inBag == this.inBag);
 }
 
 class TripItemsCompanion extends UpdateCompanion<TripItem> {
   final Value<int> tripId;
   final Value<int> itemId;
+  final Value<int?> quantity;
+  final Value<bool> inBag;
   final Value<int> rowid;
   const TripItemsCompanion({
     this.tripId = const Value.absent(),
     this.itemId = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.inBag = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TripItemsCompanion.insert({
     required int tripId,
     required int itemId,
+    this.quantity = const Value.absent(),
+    this.inBag = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : tripId = Value(tripId),
        itemId = Value(itemId);
   static Insertable<TripItem> custom({
     Expression<int>? tripId,
     Expression<int>? itemId,
+    Expression<int>? quantity,
+    Expression<bool>? inBag,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (tripId != null) 'trip_id': tripId,
       if (itemId != null) 'item_id': itemId,
+      if (quantity != null) 'quantity': quantity,
+      if (inBag != null) 'in_bag': inBag,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1385,11 +1642,15 @@ class TripItemsCompanion extends UpdateCompanion<TripItem> {
   TripItemsCompanion copyWith({
     Value<int>? tripId,
     Value<int>? itemId,
+    Value<int?>? quantity,
+    Value<bool>? inBag,
     Value<int>? rowid,
   }) {
     return TripItemsCompanion(
       tripId: tripId ?? this.tripId,
       itemId: itemId ?? this.itemId,
+      quantity: quantity ?? this.quantity,
+      inBag: inBag ?? this.inBag,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1403,6 +1664,12 @@ class TripItemsCompanion extends UpdateCompanion<TripItem> {
     if (itemId.present) {
       map['item_id'] = Variable<int>(itemId.value);
     }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (inBag.present) {
+      map['in_bag'] = Variable<bool>(inBag.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1414,6 +1681,8 @@ class TripItemsCompanion extends UpdateCompanion<TripItem> {
     return (StringBuffer('TripItemsCompanion(')
           ..write('tripId: $tripId, ')
           ..write('itemId: $itemId, ')
+          ..write('quantity: $quantity, ')
+          ..write('inBag: $inBag, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2555,6 +2824,9 @@ typedef $$TripsTableCreateCompanionBuilder =
       required String name,
       Value<int?> targetWeightGrams,
       Value<DateTime> createdAt,
+      Value<DateTime?> startDate,
+      Value<DateTime?> endDate,
+      Value<bool> isDraft,
     });
 typedef $$TripsTableUpdateCompanionBuilder =
     TripsCompanion Function({
@@ -2562,6 +2834,9 @@ typedef $$TripsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<int?> targetWeightGrams,
       Value<DateTime> createdAt,
+      Value<DateTime?> startDate,
+      Value<DateTime?> endDate,
+      Value<bool> isDraft,
     });
 
 final class $$TripsTableReferences
@@ -2630,6 +2905,21 @@ class $$TripsTableFilterComposer extends Composer<_$AppDatabase, $TripsTable> {
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDraft => $composableBuilder(
+    column: $table.isDraft,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2712,6 +3002,21 @@ class $$TripsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDraft => $composableBuilder(
+    column: $table.isDraft,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$TripsTableAnnotationComposer
@@ -2736,6 +3041,15 @@ class $$TripsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDraft =>
+      $composableBuilder(column: $table.isDraft, builder: (column) => column);
 
   Expression<T> tripItemsRefs<T extends Object>(
     Expression<T> Function($$TripItemsTableAnnotationComposer a) f,
@@ -2820,11 +3134,17 @@ class $$TripsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<int?> targetWeightGrams = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> startDate = const Value.absent(),
+                Value<DateTime?> endDate = const Value.absent(),
+                Value<bool> isDraft = const Value.absent(),
               }) => TripsCompanion(
                 id: id,
                 name: name,
                 targetWeightGrams: targetWeightGrams,
                 createdAt: createdAt,
+                startDate: startDate,
+                endDate: endDate,
+                isDraft: isDraft,
               ),
           createCompanionCallback:
               ({
@@ -2832,11 +3152,17 @@ class $$TripsTableTableManager
                 required String name,
                 Value<int?> targetWeightGrams = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> startDate = const Value.absent(),
+                Value<DateTime?> endDate = const Value.absent(),
+                Value<bool> isDraft = const Value.absent(),
               }) => TripsCompanion.insert(
                 id: id,
                 name: name,
                 targetWeightGrams: targetWeightGrams,
                 createdAt: createdAt,
+                startDate: startDate,
+                endDate: endDate,
+                isDraft: isDraft,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -2919,12 +3245,16 @@ typedef $$TripItemsTableCreateCompanionBuilder =
     TripItemsCompanion Function({
       required int tripId,
       required int itemId,
+      Value<int?> quantity,
+      Value<bool> inBag,
       Value<int> rowid,
     });
 typedef $$TripItemsTableUpdateCompanionBuilder =
     TripItemsCompanion Function({
       Value<int> tripId,
       Value<int> itemId,
+      Value<int?> quantity,
+      Value<bool> inBag,
       Value<int> rowid,
     });
 
@@ -2976,6 +3306,16 @@ class $$TripItemsTableFilterComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get inBag => $composableBuilder(
+    column: $table.inBag,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$TripsTableFilterComposer get tripId {
     final $$TripsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -3032,6 +3372,16 @@ class $$TripItemsTableOrderingComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get inBag => $composableBuilder(
+    column: $table.inBag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TripsTableOrderingComposer get tripId {
     final $$TripsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3088,6 +3438,12 @@ class $$TripItemsTableAnnotationComposer
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<bool> get inBag =>
+      $composableBuilder(column: $table.inBag, builder: (column) => column);
+
   $$TripsTableAnnotationComposer get tripId {
     final $$TripsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -3165,20 +3521,28 @@ class $$TripItemsTableTableManager
               ({
                 Value<int> tripId = const Value.absent(),
                 Value<int> itemId = const Value.absent(),
+                Value<int?> quantity = const Value.absent(),
+                Value<bool> inBag = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TripItemsCompanion(
                 tripId: tripId,
                 itemId: itemId,
+                quantity: quantity,
+                inBag: inBag,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required int tripId,
                 required int itemId,
+                Value<int?> quantity = const Value.absent(),
+                Value<bool> inBag = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TripItemsCompanion.insert(
                 tripId: tripId,
                 itemId: itemId,
+                quantity: quantity,
+                inBag: inBag,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

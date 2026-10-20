@@ -13,8 +13,10 @@ import 'theme.dart';
 /// name's own line box, and a wrapped second line broke that alignment
 /// (the checkbox rode down to the wrapped line, next to "шт.)" instead of
 /// the name itself).
-Widget itemNameText(Item item, {required TextStyle style}) {
-  if (item.quantity <= 1) {
+/// [showQuantity] false drops the suffix where something else (the trip
+/// quantity picker) already shows the count.
+Widget itemNameText(Item item, {required TextStyle style, bool showQuantity = true}) {
+  if (item.quantity <= 1 || !showQuantity) {
     return Text(item.name, style: style, maxLines: 1, overflow: TextOverflow.ellipsis);
   }
   return Text.rich(

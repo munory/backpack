@@ -262,6 +262,31 @@ ThemeData buildAppTheme() {
         overlayColor: Colors.black.withValues(alpha: 0.15),
       ),
     ),
+    // Material derives the date picker's range highlight from the seed's
+    // tonal palette, which comes out pink — set it from our own palette:
+    // solid accent for the picked days, a soft wash of it in between.
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: AppColors.surfaceElevated,
+      rangePickerBackgroundColor: AppColors.background,
+      rangePickerHeaderBackgroundColor: AppColors.background,
+      rangePickerHeaderForegroundColor: AppColors.textPrimary,
+      headerForegroundColor: AppColors.textPrimary,
+      surfaceTintColor: Colors.transparent,
+      rangeSelectionBackgroundColor:
+          AppColors.accent.withValues(alpha: AppColors.isDark ? 0.24 : 0.18),
+      dayBackgroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected) ? AppColors.accent : null,
+      ),
+      dayForegroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected) ? Colors.white : AppColors.textPrimary,
+      ),
+      todayForegroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected) ? Colors.white : AppColors.accent,
+      ),
+      todayBorder: BorderSide(color: AppColors.accent),
+      cancelButtonStyle: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
+      confirmButtonStyle: TextButton.styleFrom(foregroundColor: AppColors.accent),
+    ),
     dialogTheme: DialogThemeData(
       backgroundColor: AppColors.surfaceElevated,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'common/navigation.dart';
@@ -70,6 +71,11 @@ class _BackpackAppState extends State<BackpackApp> with WidgetsBindingObserver {
     return MaterialApp(
       title: 'Backpack',
       theme: buildAppTheme(),
+      // Russian for the framework's own UI too (date picker months and
+      // buttons, text-selection menu) — otherwise those stay in English.
+      locale: const Locale('ru'),
+      supportedLocales: const [Locale('ru')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       // Not `const` — a `const HomeShell()` would be the exact same object
       // reference on every rebuild, and Flutter skips rebuilding a child
       // entirely when it's handed the identical widget instance again, which

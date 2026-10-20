@@ -9,6 +9,7 @@ import '../../common/input_decoration.dart';
 import '../../common/item_name.dart';
 import '../../common/text_format.dart';
 import '../../common/theme.dart';
+import '../../common/trip_switcher.dart';
 import '../../common/weight_format.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
@@ -92,6 +93,10 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
             '$categoryCount ${categoryWord(categoryCount)}',
             style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.8), fontSize: 13),
           ),
+          if (ref.watch(activeTripProvider).value case final trip?) ...[
+            const SizedBox(height: 8),
+            _PackingForLine(trip: trip),
+          ],
           const SizedBox(height: 16),
           // Only worth surfacing once there's enough in the closet that
           // scanning the whole list stops being the fastest way to find
@@ -586,3 +591,46 @@ class _FilteredItemRow extends StatelessWidget {
   }
 }
 
+
+/// "Собираю для: Karelia ▾" — says which trip the checkboxes below add to,
+/// which otherwise isn't visible anywhere on this screen. Tap to switch.
+class _PackingForLine extends ConsumerWidget {
+  const _PackingForLine({required this.trip});
+
+  final Trip trip;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => showTripSwitcherMenu(context, ref, trip),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Собираю для: ',
+                style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.8), fontSize: 14),
+              ),
+              Flexible(
+                child: Text(
+                  trip.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.accent,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(Icons.expand_more, size: 18, color: AppColors.accent),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
