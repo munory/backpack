@@ -8,6 +8,7 @@ import '../../common/empty_state.dart';
 import '../../common/input_decoration.dart';
 import '../../common/item_name.dart';
 import '../../common/l10n.dart';
+import '../../common/navigation.dart';
 import '../../common/theme.dart';
 import '../../common/trip_switcher.dart';
 import '../../common/weight_format.dart';
@@ -42,6 +43,14 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(() => setState(() {}));
+    final requested = ref.read(inventoryConditionRequestProvider);
+    if (requested != null) {
+      _conditionFilter = requested;
+      // Providers can't be changed mid-build — clear it right after.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => ref.read(inventoryConditionRequestProvider.notifier).state = null,
+      );
+    }
   }
 
   @override
@@ -79,6 +88,7 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
     final hasActiveFilter =
         _conditionFilter != null || _packTypeFilter != null || _weightSort != _WeightSort.none;
     final showFlatList = query.isNotEmpty || hasActiveFilter;
+    final showSearch = itemCount >= 8 || hasActiveFilter;
 
     return SafeArea(
       child: ListView(
@@ -101,8 +111,9 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
           const SizedBox(height: 16),
           // Only worth surfacing once there's enough in the closet that
           // scanning the whole list stops being the fastest way to find
-          // something.
-          if (itemCount >= 8)
+          // something — or when a filter is on (e.g. opened from Профиль),
+          // so there's always a way to clear it.
+          if (showSearch)
             SizedBox(
               height: kFieldHeight,
               child: Row(
@@ -131,7 +142,7 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
                 ],
               ),
             ),
-          if (itemCount >= 8) const SizedBox(height: 16),
+          if (showSearch) const SizedBox(height: 16),
           if (showFlatList)
             ..._filteredItemRows(context, query, itemsAsync.value ?? const [], categoryById)
           else

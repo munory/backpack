@@ -698,6 +698,132 @@ abstract class AppLocalizations {
   /// **'System'**
   String get languageSystem;
 
+  /// No description provided for @tripCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 trip} other{{count} trips}}'**
+  String tripCount(int count);
+
+  /// No description provided for @allYourGear.
+  ///
+  /// In en, this message translates to:
+  /// **'All your gear'**
+  String get allYourGear;
+
+  /// No description provided for @attentionRepair.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item needs repair} other{{count} items need repair}}'**
+  String attentionRepair(int count);
+
+  /// No description provided for @attentionReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item to replace} other{{count} items to replace}}'**
+  String attentionReplace(int count);
+
+  /// No description provided for @sectionData.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get sectionData;
+
+  /// No description provided for @importFromFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from file'**
+  String get importFromFile;
+
+  /// No description provided for @exportExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export to Excel'**
+  String get exportExcel;
+
+  /// No description provided for @exportLighterPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Export for LighterPack (CSV)'**
+  String get exportLighterPack;
+
+  /// No description provided for @saveToPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to phone'**
+  String get saveToPhone;
+
+  /// No description provided for @sendTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Send…'**
+  String get sendTo;
+
+  /// No description provided for @fileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'File saved'**
+  String get fileSaved;
+
+  /// No description provided for @colWeightEach.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight each, {unit}'**
+  String colWeightEach(String unit);
+
+  /// No description provided for @colWeightTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total weight, {unit}'**
+  String colWeightTotal(String unit);
+
+  /// No description provided for @comingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'soon'**
+  String get comingSoon;
+
+  /// No description provided for @sectionSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get sectionSettings;
+
+  /// No description provided for @sectionAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get sectionAbout;
+
+  /// No description provided for @version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String version(String version);
+
+  /// No description provided for @clearAllData.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all data'**
+  String get clearAllData;
+
+  /// No description provided for @clearAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all data?'**
+  String get clearAllTitle;
+
+  /// No description provided for @clearAllBody.
+  ///
+  /// In en, this message translates to:
+  /// **'All items, categories and trips will be deleted for good. Your settings stay.'**
+  String get clearAllBody;
+
+  /// No description provided for @clearAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete everything'**
+  String get clearAllConfirm;
+
   /// No description provided for @tripDates.
   ///
   /// In en, this message translates to:

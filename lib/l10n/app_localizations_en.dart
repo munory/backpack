@@ -343,6 +343,100 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageSystem => 'System';
 
   @override
+  String tripCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trips',
+      one: '1 trip',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get allYourGear => 'All your gear';
+
+  @override
+  String attentionRepair(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items need repair',
+      one: '1 item needs repair',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String attentionReplace(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items to replace',
+      one: '1 item to replace',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sectionData => 'Data';
+
+  @override
+  String get importFromFile => 'Import from file';
+
+  @override
+  String get exportExcel => 'Export to Excel';
+
+  @override
+  String get exportLighterPack => 'Export for LighterPack (CSV)';
+
+  @override
+  String get saveToPhone => 'Save to phone';
+
+  @override
+  String get sendTo => 'Send…';
+
+  @override
+  String get fileSaved => 'File saved';
+
+  @override
+  String colWeightEach(String unit) {
+    return 'Weight each, $unit';
+  }
+
+  @override
+  String colWeightTotal(String unit) {
+    return 'Total weight, $unit';
+  }
+
+  @override
+  String get comingSoon => 'soon';
+
+  @override
+  String get sectionSettings => 'Settings';
+
+  @override
+  String get sectionAbout => 'About';
+
+  @override
+  String version(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get clearAllData => 'Delete all data';
+
+  @override
+  String get clearAllTitle => 'Delete all data?';
+
+  @override
+  String get clearAllBody =>
+      'All items, categories and trips will be deleted for good. Your settings stay.';
+
+  @override
+  String get clearAllConfirm => 'Delete everything';
+
+  @override
   String get tripDates => 'Trip dates';
 
   @override

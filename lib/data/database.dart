@@ -203,8 +203,9 @@ class AppDatabase extends _$AppDatabase {
   /// totally empty app — every one of these is a perfectly ordinary,
   /// renameable/deletable category. "Рюкзаки" is just like any other —
   /// a backpack is simply a piece of gear, same as a stove or a jacket.
-  Future<void> _seedDefaultCategories() async {
-    final l = lookupAppLocalizations(Locale(seedLanguage == 'ru' ? 'ru' : 'en'));
+  Future<void> _seedDefaultCategories([String? language]) async {
+    final code = language ?? seedLanguage;
+    final l = lookupAppLocalizations(Locale(code == 'ru' ? 'ru' : 'en'));
     final starters = [
       (l.seedPacks, PackType.gear, 'backpack', 'terracotta'),
       (l.seedSleep, PackType.gear, 'sleep', 'plum'),
@@ -384,6 +385,20 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> updateLanguage(AppLanguage language) {
     return update(appSettings).write(AppSettingsCompanion(language: Value(language)));
+  }
+
+  /// "Очистить все данные": every item, category and trip goes, and the app
+  /// is back to a fresh install — starter categories in [language] — while
+  /// the user's own settings (theme, language, units) stay.
+  Future<void> clearAllData({required String language}) {
+    return transaction(() async {
+      await setActiveTrip(null);
+      await delete(tripItems).go();
+      await delete(trips).go();
+      await delete(items).go();
+      await delete(categories).go();
+      await _seedDefaultCategories(language);
+    });
   }
 
   Future<void> updateWeightUnit(WeightUnit unit) {

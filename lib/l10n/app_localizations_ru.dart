@@ -345,6 +345,103 @@ class AppLocalizationsRu extends AppLocalizations {
   String get languageSystem => 'Системный';
 
   @override
+  String tripCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count походов',
+      few: '$count похода',
+      one: '$count поход',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get allYourGear => 'Весь инвентарь';
+
+  @override
+  String attentionRepair(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count вещей требуют ремонта',
+      few: '$count вещи требуют ремонта',
+      one: '$count вещь требует ремонта',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String attentionReplace(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count вещей под замену',
+      few: '$count вещи под замену',
+      one: '$count вещь под замену',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sectionData => 'Данные';
+
+  @override
+  String get importFromFile => 'Импорт из файла';
+
+  @override
+  String get exportExcel => 'Экспорт в Excel';
+
+  @override
+  String get exportLighterPack => 'Экспорт для LighterPack (CSV)';
+
+  @override
+  String get saveToPhone => 'Сохранить на телефон';
+
+  @override
+  String get sendTo => 'Отправить…';
+
+  @override
+  String get fileSaved => 'Файл сохранён';
+
+  @override
+  String colWeightEach(String unit) {
+    return 'Вес за шт., $unit';
+  }
+
+  @override
+  String colWeightTotal(String unit) {
+    return 'Вес всего, $unit';
+  }
+
+  @override
+  String get comingSoon => 'скоро';
+
+  @override
+  String get sectionSettings => 'Настройки';
+
+  @override
+  String get sectionAbout => 'О приложении';
+
+  @override
+  String version(String version) {
+    return 'Версия $version';
+  }
+
+  @override
+  String get clearAllData => 'Очистить все данные';
+
+  @override
+  String get clearAllTitle => 'Удалить все данные?';
+
+  @override
+  String get clearAllBody =>
+      'Все вещи, категории и походы удалятся безвозвратно. Настройки останутся.';
+
+  @override
+  String get clearAllConfirm => 'Удалить всё';
+
+  @override
   String get tripDates => 'Даты похода';
 
   @override

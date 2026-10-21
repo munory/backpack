@@ -157,6 +157,23 @@ void main() {
     expect(names[fromRu], 'Rockies (copy 3)');
   });
 
+  test('clearing all data leaves a fresh install, but keeps the settings', () async {
+    final stove = await addGear('Горелка');
+    await db.setItemPacked(stove, true);
+    await db.updateLanguage(AppLanguage.en);
+
+    await db.clearAllData(language: 'en');
+
+    expect(await db.select(db.items).get(), isEmpty);
+    expect(await db.select(db.trips).get(), isEmpty);
+    expect(await db.select(db.tripItems).get(), isEmpty);
+    expect(await activeId(), isNull);
+    final categories = (await db.select(db.categories).get()).map((c) => c.name);
+    expect(categories, containsAll(['Packs', 'Kitchen']));
+    expect(categories, hasLength(6));
+    expect((await db.select(db.appSettings).getSingle()).language, AppLanguage.en);
+  });
+
   test('starter categories are named in the install language', () async {
     // A second, separate in-memory database next to setUp's — on purpose.
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
