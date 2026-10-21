@@ -1730,7 +1730,32 @@ class $AppSettingsTable extends AppSettings
         defaultValue: const Constant(0),
       ).withConverter<AppThemeMode>($AppSettingsTable.$converterthemeMode);
   @override
-  List<GeneratedColumn> get $columns => [id, activeTripId, themeMode];
+  late final GeneratedColumnWithTypeConverter<AppLanguage, int> language =
+      GeneratedColumn<int>(
+        'language',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      ).withConverter<AppLanguage>($AppSettingsTable.$converterlanguage);
+  @override
+  late final GeneratedColumnWithTypeConverter<WeightUnit?, int> weightUnit =
+      GeneratedColumn<int>(
+        'weight_unit',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      ).withConverter<WeightUnit?>($AppSettingsTable.$converterweightUnitn);
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    activeTripId,
+    themeMode,
+    language,
+    weightUnit,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1778,6 +1803,18 @@ class $AppSettingsTable extends AppSettings
           data['${effectivePrefix}theme_mode'],
         )!,
       ),
+      language: $AppSettingsTable.$converterlanguage.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}language'],
+        )!,
+      ),
+      weightUnit: $AppSettingsTable.$converterweightUnitn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}weight_unit'],
+        ),
+      ),
     );
   }
 
@@ -1788,16 +1825,29 @@ class $AppSettingsTable extends AppSettings
 
   static JsonTypeConverter2<AppThemeMode, int, int> $converterthemeMode =
       const EnumIndexConverter<AppThemeMode>(AppThemeMode.values);
+  static JsonTypeConverter2<AppLanguage, int, int> $converterlanguage =
+      const EnumIndexConverter<AppLanguage>(AppLanguage.values);
+  static JsonTypeConverter2<WeightUnit, int, int> $converterweightUnit =
+      const EnumIndexConverter<WeightUnit>(WeightUnit.values);
+  static JsonTypeConverter2<WeightUnit?, int?, int?> $converterweightUnitn =
+      JsonTypeConverter2.asNullable($converterweightUnit);
 }
 
 class AppSetting extends DataClass implements Insertable<AppSetting> {
   final int id;
   final int? activeTripId;
   final AppThemeMode themeMode;
+  final AppLanguage language;
+
+  /// Null until picked in Профиль — then the language decides (kilograms
+  /// for Russian, pounds for English).
+  final WeightUnit? weightUnit;
   const AppSetting({
     required this.id,
     this.activeTripId,
     required this.themeMode,
+    required this.language,
+    this.weightUnit,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1811,6 +1861,16 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
         $AppSettingsTable.$converterthemeMode.toSql(themeMode),
       );
     }
+    {
+      map['language'] = Variable<int>(
+        $AppSettingsTable.$converterlanguage.toSql(language),
+      );
+    }
+    if (!nullToAbsent || weightUnit != null) {
+      map['weight_unit'] = Variable<int>(
+        $AppSettingsTable.$converterweightUnitn.toSql(weightUnit),
+      );
+    }
     return map;
   }
 
@@ -1821,6 +1881,10 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ? const Value.absent()
           : Value(activeTripId),
       themeMode: Value(themeMode),
+      language: Value(language),
+      weightUnit: weightUnit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weightUnit),
     );
   }
 
@@ -1835,6 +1899,12 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       themeMode: $AppSettingsTable.$converterthemeMode.fromJson(
         serializer.fromJson<int>(json['themeMode']),
       ),
+      language: $AppSettingsTable.$converterlanguage.fromJson(
+        serializer.fromJson<int>(json['language']),
+      ),
+      weightUnit: $AppSettingsTable.$converterweightUnitn.fromJson(
+        serializer.fromJson<int?>(json['weightUnit']),
+      ),
     );
   }
   @override
@@ -1846,6 +1916,12 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'themeMode': serializer.toJson<int>(
         $AppSettingsTable.$converterthemeMode.toJson(themeMode),
       ),
+      'language': serializer.toJson<int>(
+        $AppSettingsTable.$converterlanguage.toJson(language),
+      ),
+      'weightUnit': serializer.toJson<int?>(
+        $AppSettingsTable.$converterweightUnitn.toJson(weightUnit),
+      ),
     };
   }
 
@@ -1853,10 +1929,14 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     int? id,
     Value<int?> activeTripId = const Value.absent(),
     AppThemeMode? themeMode,
+    AppLanguage? language,
+    Value<WeightUnit?> weightUnit = const Value.absent(),
   }) => AppSetting(
     id: id ?? this.id,
     activeTripId: activeTripId.present ? activeTripId.value : this.activeTripId,
     themeMode: themeMode ?? this.themeMode,
+    language: language ?? this.language,
+    weightUnit: weightUnit.present ? weightUnit.value : this.weightUnit,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -1865,6 +1945,10 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ? data.activeTripId.value
           : this.activeTripId,
       themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
+      language: data.language.present ? data.language.value : this.language,
+      weightUnit: data.weightUnit.present
+          ? data.weightUnit.value
+          : this.weightUnit,
     );
   }
 
@@ -1873,45 +1957,60 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     return (StringBuffer('AppSetting(')
           ..write('id: $id, ')
           ..write('activeTripId: $activeTripId, ')
-          ..write('themeMode: $themeMode')
+          ..write('themeMode: $themeMode, ')
+          ..write('language: $language, ')
+          ..write('weightUnit: $weightUnit')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, activeTripId, themeMode);
+  int get hashCode =>
+      Object.hash(id, activeTripId, themeMode, language, weightUnit);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is AppSetting &&
           other.id == this.id &&
           other.activeTripId == this.activeTripId &&
-          other.themeMode == this.themeMode);
+          other.themeMode == this.themeMode &&
+          other.language == this.language &&
+          other.weightUnit == this.weightUnit);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<int> id;
   final Value<int?> activeTripId;
   final Value<AppThemeMode> themeMode;
+  final Value<AppLanguage> language;
+  final Value<WeightUnit?> weightUnit;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.activeTripId = const Value.absent(),
     this.themeMode = const Value.absent(),
+    this.language = const Value.absent(),
+    this.weightUnit = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
     this.activeTripId = const Value.absent(),
     this.themeMode = const Value.absent(),
+    this.language = const Value.absent(),
+    this.weightUnit = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
     Expression<int>? activeTripId,
     Expression<int>? themeMode,
+    Expression<int>? language,
+    Expression<int>? weightUnit,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (activeTripId != null) 'active_trip_id': activeTripId,
       if (themeMode != null) 'theme_mode': themeMode,
+      if (language != null) 'language': language,
+      if (weightUnit != null) 'weight_unit': weightUnit,
     });
   }
 
@@ -1919,11 +2018,15 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Value<int>? id,
     Value<int?>? activeTripId,
     Value<AppThemeMode>? themeMode,
+    Value<AppLanguage>? language,
+    Value<WeightUnit?>? weightUnit,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
       activeTripId: activeTripId ?? this.activeTripId,
       themeMode: themeMode ?? this.themeMode,
+      language: language ?? this.language,
+      weightUnit: weightUnit ?? this.weightUnit,
     );
   }
 
@@ -1941,6 +2044,16 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
         $AppSettingsTable.$converterthemeMode.toSql(themeMode.value),
       );
     }
+    if (language.present) {
+      map['language'] = Variable<int>(
+        $AppSettingsTable.$converterlanguage.toSql(language.value),
+      );
+    }
+    if (weightUnit.present) {
+      map['weight_unit'] = Variable<int>(
+        $AppSettingsTable.$converterweightUnitn.toSql(weightUnit.value),
+      );
+    }
     return map;
   }
 
@@ -1949,7 +2062,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     return (StringBuffer('AppSettingsCompanion(')
           ..write('id: $id, ')
           ..write('activeTripId: $activeTripId, ')
-          ..write('themeMode: $themeMode')
+          ..write('themeMode: $themeMode, ')
+          ..write('language: $language, ')
+          ..write('weightUnit: $weightUnit')
           ..write(')'))
         .toString();
   }
@@ -3630,12 +3745,16 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<int> id,
       Value<int?> activeTripId,
       Value<AppThemeMode> themeMode,
+      Value<AppLanguage> language,
+      Value<WeightUnit?> weightUnit,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
       Value<int> id,
       Value<int?> activeTripId,
       Value<AppThemeMode> themeMode,
+      Value<AppLanguage> language,
+      Value<WeightUnit?> weightUnit,
     });
 
 final class $$AppSettingsTableReferences
@@ -3680,6 +3799,18 @@ class $$AppSettingsTableFilterComposer
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
+  ColumnWithTypeConverterFilters<AppLanguage, AppLanguage, int> get language =>
+      $composableBuilder(
+        column: $table.language,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnWithTypeConverterFilters<WeightUnit?, WeightUnit, int> get weightUnit =>
+      $composableBuilder(
+        column: $table.weightUnit,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
   $$TripsTableFilterComposer get activeTripId {
     final $$TripsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -3723,6 +3854,16 @@ class $$AppSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get language => $composableBuilder(
+    column: $table.language,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weightUnit => $composableBuilder(
+    column: $table.weightUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TripsTableOrderingComposer get activeTripId {
     final $$TripsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3761,6 +3902,15 @@ class $$AppSettingsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<AppThemeMode, int> get themeMode =>
       $composableBuilder(column: $table.themeMode, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<AppLanguage, int> get language =>
+      $composableBuilder(column: $table.language, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<WeightUnit?, int> get weightUnit =>
+      $composableBuilder(
+        column: $table.weightUnit,
+        builder: (column) => column,
+      );
 
   $$TripsTableAnnotationComposer get activeTripId {
     final $$TripsTableAnnotationComposer composer = $composerBuilder(
@@ -3817,20 +3967,28 @@ class $$AppSettingsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<int?> activeTripId = const Value.absent(),
                 Value<AppThemeMode> themeMode = const Value.absent(),
+                Value<AppLanguage> language = const Value.absent(),
+                Value<WeightUnit?> weightUnit = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 activeTripId: activeTripId,
                 themeMode: themeMode,
+                language: language,
+                weightUnit: weightUnit,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 Value<int?> activeTripId = const Value.absent(),
                 Value<AppThemeMode> themeMode = const Value.absent(),
+                Value<AppLanguage> language = const Value.absent(),
+                Value<WeightUnit?> weightUnit = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 activeTripId: activeTripId,
                 themeMode: themeMode,
+                language: language,
+                weightUnit: weightUnit,
               ),
           withReferenceMapper: (p0) => p0
               .map(

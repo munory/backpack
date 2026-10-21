@@ -6,6 +6,7 @@ import '../../common/category_card.dart';
 import '../../common/category_form_sheet.dart';
 import '../../common/empty_state.dart';
 import '../../common/input_decoration.dart';
+import '../../common/l10n.dart';
 import '../../common/navigation.dart';
 import '../../common/text_format.dart';
 import '../../common/theme.dart';
@@ -30,20 +31,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   _WeightView _view = _WeightView.total;
 
   Future<void> _showSetTargetDialog(BuildContext context, WidgetRef ref, Trip trip) async {
-    final controller = TextEditingController(
-      text: trip.targetWeightGrams == null
-          ? ''
-          : (trip.targetWeightGrams! / 1000).toString(),
-    );
+    final unit = weightUnitOf(context);
+    final perUnit = gramsPerBigUnit(unit);
+    final l = context.l10n;
+    final initialText = trip.targetWeightGrams == null
+        ? ''
+        : formatInputNumber(trip.targetWeightGrams! / perUnit, languageCode: l.localeName);
+    final controller = TextEditingController(text: initialText);
     final result = await showDialog<double?>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Целевой вес рюкзака'),
+        title: Text(l.targetWeightTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const FieldLabel('Вес (кг)'),
+            FieldLabel(l.weightIn(bigUnitLabel(l, unit))),
             SizedBox(
               height: kFieldHeight,
               child: TextField(
@@ -56,7 +59,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             if (trip.targetWeightGrams != null) ...[
               const SizedBox(height: 6),
               Text(
-                '0 или пусто — убрать цель',
+                l.clearTargetHint,
                 style: TextStyle(
                   color: AppColors.textSecondary.withValues(alpha: 0.6),
                   fontSize: 12,
@@ -72,7 +75,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
                   style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
-                  child: const Text('Отмена'),
+                  child: Text(l.cancel),
                 ),
               ),
               const SizedBox(width: 12),
@@ -89,10 +92,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     // to keep the actions row from overflowing with a third
                     // button). Cancel pops null, so the two stay
                     // distinguishable.
-                    final parsed = double.tryParse(controller.text.replaceAll(',', '.'));
+                    final parsed = parseInputNumber(controller.text);
                     Navigator.pop(context, parsed ?? 0.0);
                   },
-                  child: const Text('Сохранить'),
+                  child: Text(l.save),
                 ),
               ),
             ],
@@ -101,12 +104,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
 
-    if (result == null) return;
+    // Saved untouched: keep the exact stored grams rather than the rounded
+    // value shown (23 kg shown as 50.71 lb would come back as 23.002 kg).
+    if (result == null || controller.text == initialText) return;
     final db = ref.read(databaseProvider);
     if (result <= 0) {
       await db.updateTripTarget(trip.id, null);
     } else {
-      await db.updateTripTarget(trip.id, (result * 1000).round());
+      await db.updateTripTarget(trip.id, (result * perUnit).round());
     }
   }
 
@@ -127,13 +132,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final closetById = {
       for (final i in ref.watch(allItemsProvider).value ?? const <Item>[]) i.id: i,
     };
+    final l = context.l10n;
 
     if (rootTotals.isEmpty) {
       final empty = EmptyStateView(
         icon: Icons.backpack_outlined,
-        title: 'Твой рюкзак пуст',
-        subtitle: 'Отметь снаряжение как "в рюкзаке" в Инвентаре, чтобы увидеть вес.',
-        ctaLabel: 'Перейти в Инвентарь',
+        title: l.emptyPackTitle,
+        subtitle: l.emptyPackSubtitle,
+        ctaLabel: l.goToInventory,
         ctaIcon: Icons.arrow_forward,
         onCta: () => ref.read(currentTabProvider.notifier).state = 1,
       );
@@ -186,8 +192,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Center(
                     child: Text(
                       targetGrams == null
-                          ? formatKg(totalGrams)
-                          : '${formatKg(totalGrams)} ⁄ ${formatKg(targetGrams)}',
+                          ? formatWeight(context, totalGrams)
+                          : '${formatWeight(context, totalGrams)} ⁄ ${formatWeight(context, targetGrams)}',
                       style: weightDisplayStyle(isOverweight: isOverweight),
                     ),
                   ),
@@ -197,7 +203,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
                         child: Text(
-                          targetGrams == null ? 'Задать целевой вес' : 'Изменить целевой вес',
+                          targetGrams == null ? l.setTarget : l.changeTarget,
                           style: TextStyle(color: AppColors.accent, fontSize: 13),
                         ),
                       ),
@@ -206,14 +212,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ] else ...[
                   Center(
                     child: Text(
-                      formatKg(baseWeightGrams),
+                      formatWeight(context, baseWeightGrams),
                       style: weightDisplayStyle(isOverweight: false),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Center(
                     child: Text(
-                      'Только снаряжение и рюкзак — без еды и воды',
+                      l.baseWeightHint,
                       style: TextStyle(
                         color: AppColors.textSecondary.withValues(alpha: 0.65),
                         fontSize: 12,
@@ -233,7 +239,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 20),
           for (final entry in rootTotals)
             CategoryCard(
-              title: entry.title,
+              title: entry.title ?? l.uncategorized,
               packType: entry.packType,
               category: entry.category,
               weightGrams: entry.weightGrams,
@@ -248,8 +254,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
               onDuplicateItem: (item) async {
-                final duplicated =
-                    await ref.read(databaseProvider).duplicateItem(closetById[item.id] ?? item);
+                final duplicated = await ref
+                    .read(databaseProvider)
+                    .duplicateItem(closetById[item.id] ?? item, copyWord: l.copyWord);
                 if (context.mounted) {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => AddItemScreen(editing: duplicated)),
@@ -267,7 +274,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       quantity == owned ? null : quantity,
                     );
               },
-              destructiveActionLabel: 'Убрать из похода',
+              destructiveActionLabel: l.removeFromTrip,
               destructiveActionDangerous: false,
               onDestructiveAction: (item) =>
                   ref.read(databaseProvider).setItemPacked(item.id, false),
@@ -327,8 +334,8 @@ class _WeightViewToggle extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _segment(_WeightView.total, 'Общий вес'),
-          _segment(_WeightView.base, 'Базовый'),
+          _segment(_WeightView.total, context.l10n.totalWeight),
+          _segment(_WeightView.base, context.l10n.baseWeight),
         ],
       ),
     );
@@ -346,7 +353,8 @@ class _TripSwitcher extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dates = formatTripDates(trip.startDate, trip.endDate);
+    final l = context.l10n;
+    final dates = formatTripDates(trip.startDate, trip.endDate, languageCode: l.localeName);
     return Align(
       alignment: Alignment.centerLeft,
       child: InkWell(
@@ -362,7 +370,7 @@ class _TripSwitcher extends ConsumerWidget {
                 children: [
                   Flexible(
                     child: Text(
-                      trip.name,
+                      tripName(l, trip),
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                     ),
@@ -427,11 +435,11 @@ class _PackingButton extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      done ? 'Рюкзак собран' : 'Чек-лист сборов',
+                      done ? context.l10n.packDone : context.l10n.packingChecklist,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      'Отмечай, что уже лежит в рюкзаке',
+                      context.l10n.packingSubtitle,
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary.withValues(alpha: 0.65),
@@ -441,7 +449,7 @@ class _PackingButton extends StatelessWidget {
                 ),
               ),
               Text(
-                '$packed из $total',
+                context.l10n.nOfM(packed, total),
                 style: TextStyle(
                   fontSize: 13,
                   fontFeatures: const [FontFeature.tabularFigures()],

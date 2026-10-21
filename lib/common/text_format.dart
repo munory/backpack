@@ -6,40 +6,44 @@ String capitalizeFirst(String s) {
   return s[0].toUpperCase() + s.substring(1);
 }
 
-/// Russian plural forms depend on the last one/two digits, not just "1 vs
-/// many" — 21 вещь, 22 вещи, 25 вещей.
-String pluralizeRu(int n, String one, String few, String many) {
-  final mod10 = n % 10;
-  final mod100 = n % 100;
-  if (mod10 == 1 && mod100 != 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
-  return many;
-}
-
-String itemWord(int n) => pluralizeRu(n, 'вещь', 'вещи', 'вещей');
-String categoryWord(int n) => pluralizeRu(n, 'категория', 'категории', 'категорий');
-
-const _monthsShort = [
+const _monthsRu = [
   'янв', 'фев', 'мар', 'апр', 'мая', 'июн',
   'июл', 'авг', 'сен', 'окт', 'ноя', 'дек',
 ];
+const _monthsEn = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
 
-/// A trip's dates as people write them: "12 окт", "12–14 окт",
-/// "30 окт – 2 ноя", with the year only when it isn't the current one.
-/// Null when there are no dates at all.
-String? formatTripDates(DateTime? start, DateTime? end, {DateTime? today}) {
+/// A trip's dates as people write them, with the year only when it isn't
+/// the current one. Null when there are no dates at all.
+/// Russian: "12 окт", "12–14 окт", "30 окт – 2 ноя", "5 янв 2027".
+/// English (any [languageCode] but "ru"): "Oct 12", "Oct 12–14",
+/// "Oct 30 – Nov 2", "Jan 5, 2027".
+String? formatTripDates(
+  DateTime? start,
+  DateTime? end, {
+  required String languageCode,
+  DateTime? today,
+}) {
   if (start == null && end == null) return null;
   final now = today ?? DateTime.now();
   final from = start ?? end!;
   final to = end ?? start!;
-  String day(DateTime d) {
-    final base = '${d.day} ${_monthsShort[d.month - 1]}';
-    return d.year != now.year ? '$base ${d.year}' : base;
+  final sameMonth = from.year == to.year && from.month == to.month;
+  final sameDay = sameMonth && from.day == to.day;
+  String? year(DateTime d) => d.year != now.year ? '${d.year}' : null;
+
+  if (languageCode == 'ru') {
+    String day(DateTime d) => [d.day, _monthsRu[d.month - 1], ?year(d)].join(' ');
+    if (sameDay) return day(from);
+    if (sameMonth) return '${from.day}–${day(to)}';
+    return '${day(from)} – ${day(to)}';
   }
 
-  if (from.year == to.year && from.month == to.month) {
-    if (from.day == to.day) return day(from);
-    return '${from.day}–${day(to)}';
-  }
+  String withYear(String s, DateTime d) => year(d) == null ? s : '$s, ${year(d)}';
+  String day(DateTime d) => withYear('${_monthsEn[d.month - 1]} ${d.day}', d);
+  if (sameDay) return day(from);
+  if (sameMonth) return withYear('${_monthsEn[from.month - 1]} ${from.day}–${to.day}', to);
   return '${day(from)} – ${day(to)}';
 }

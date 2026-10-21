@@ -7,7 +7,7 @@ import '../../common/category_form_sheet.dart';
 import '../../common/empty_state.dart';
 import '../../common/input_decoration.dart';
 import '../../common/item_name.dart';
-import '../../common/text_format.dart';
+import '../../common/l10n.dart';
 import '../../common/theme.dart';
 import '../../common/trip_switcher.dart';
 import '../../common/weight_format.dart';
@@ -59,12 +59,13 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
     final db = ref.read(databaseProvider);
     final categories = ref.watch(categoriesProvider).value ?? const <Category>[];
     final categoryById = {for (final c in categories) c.id: c};
+    final l = context.l10n;
 
     if (rootTotals.isEmpty) {
       return EmptyStateView(
         icon: Icons.inventory_2_outlined,
-        title: 'Твой инвентарь пуст',
-        ctaLabel: 'Добавить первую вещь',
+        title: l.emptyInventory,
+        ctaLabel: l.addFirstItem,
         ctaIcon: Icons.add,
         onCta: () => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => const AddItemScreen()),
@@ -84,13 +85,13 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
         children: [
           Text(
-            'Мой инвентарь',
+            l.myInventory,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
-            '${formatKg(totalGrams)} · $itemCount ${itemWord(itemCount)} · '
-            '$categoryCount ${categoryWord(categoryCount)}',
+            '${formatWeight(context, totalGrams)} · ${l.itemCount(itemCount)} · '
+            '${l.categoryCount(categoryCount)}',
             style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.8), fontSize: 13),
           ),
           if (ref.watch(activeTripProvider).value case final trip?) ...[
@@ -110,7 +111,7 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
                   Expanded(
                     child: TextField(
                       controller: _searchController,
-                      decoration: appFieldDecoration(hint: 'Найти вещь…').copyWith(
+                      decoration: appFieldDecoration(hint: l.searchHint).copyWith(
                         prefixIcon:
                             Icon(Icons.search, color: AppColors.textPrimary.withValues(alpha: 0.6)),
                         suffixIcon: query.isEmpty
@@ -136,7 +137,7 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
           else
             for (final entry in rootTotals)
               CategoryCard(
-                title: entry.title,
+                title: entry.title ?? l.uncategorized,
                 packType: entry.packType,
                 category: entry.category,
                 weightGrams: entry.weightGrams,
@@ -151,14 +152,14 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
                   MaterialPageRoute(builder: (_) => AddItemScreen(editing: item)),
                 ),
                 onDuplicateItem: (item) async {
-                  final duplicated = await db.duplicateItem(item);
+                  final duplicated = await db.duplicateItem(item, copyWord: l.copyWord);
                   if (context.mounted) {
                     Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => AddItemScreen(editing: duplicated)),
                     );
                   }
                 },
-                destructiveActionLabel: 'Удалить',
+                destructiveActionLabel: l.delete,
                 onDestructiveAction: (item) => db.deleteItem(item.id),
                 onAddItem: entry.category == null
                     ? null
@@ -243,7 +244,7 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
           padding: const EdgeInsets.symmetric(vertical: 24),
           child: Center(
             child: Text(
-              'Ничего не нашлось',
+              context.l10n.nothingFound,
               style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7)),
             ),
           ),
@@ -254,7 +255,9 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
       for (final item in matches)
         _FilteredItemRow(
           item: item,
-          categoryName: item.categoryId == null ? 'Без категории' : categoryById[item.categoryId]?.name,
+          categoryName: item.categoryId == null
+              ? context.l10n.noCategory
+              : categoryById[item.categoryId]?.name,
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => AddItemScreen(editing: item)),
           ),
@@ -425,7 +428,17 @@ class _FilterSheetState extends State<_FilterSheet> {
   @override
   Widget build(BuildContext context) {
     final count = _matchCount;
-    final conditionEntries = conditionLabels.entries.toList();
+    final l = context.l10n;
+    Widget conditionChip(ItemCondition c) => _chip(
+          conditionLabel(l, c),
+          _condition == c,
+          () => setState(() => _condition = c),
+        );
+    Widget packTypeChip(PackType t) => _chip(
+          packTypeLabel(l, t),
+          _packType == t,
+          () => setState(() => _packType = t),
+        );
 
     return SafeArea(
       child: Padding(
@@ -447,9 +460,9 @@ class _FilterSheetState extends State<_FilterSheet> {
             const SizedBox(height: 16),
             Row(
               children: [
-                const Text(
-                  'Фильтры',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                Text(
+                  l.filters,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 TextButton(
@@ -459,52 +472,43 @@ class _FilterSheetState extends State<_FilterSheet> {
                     _sort = _WeightSort.none;
                   }),
                   style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
-                  child: const Text('Сбросить всё'),
+                  child: Text(l.resetAll),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            const FieldLabel('Сортировка'),
+            FieldLabel(l.sort),
             _chipRow([
-              _chip('Сначала лёгкие', _sort == _WeightSort.ascending,
+              _chip(l.lightestFirst, _sort == _WeightSort.ascending,
                   () => setState(() => _sort = _WeightSort.ascending),
                   icon: Icons.arrow_upward),
-              _chip('Сначала тяжёлые', _sort == _WeightSort.descending,
+              _chip(l.heaviestFirst, _sort == _WeightSort.descending,
                   () => setState(() => _sort = _WeightSort.descending),
                   icon: Icons.arrow_downward),
             ]),
             const SizedBox(height: 8),
-            _chip('По умолчанию', _sort == _WeightSort.none,
+            _chip(l.defaultOrder, _sort == _WeightSort.none,
                 () => setState(() => _sort = _WeightSort.none)),
             const SizedBox(height: 20),
-            const FieldLabel('Состояние'),
+            FieldLabel(l.condition),
             _chipRow([
-              _chip('Все', _condition == null, () => setState(() => _condition = null)),
-              _chip(conditionEntries[0].value, _condition == conditionEntries[0].key,
-                  () => setState(() => _condition = conditionEntries[0].key)),
+              _chip(l.all, _condition == null, () => setState(() => _condition = null)),
+              conditionChip(conditionOrder[0]),
             ]),
             const SizedBox(height: 8),
-            _chipRow([
-              _chip(conditionEntries[1].value, _condition == conditionEntries[1].key,
-                  () => setState(() => _condition = conditionEntries[1].key)),
-              _chip(conditionEntries[2].value, _condition == conditionEntries[2].key,
-                  () => setState(() => _condition = conditionEntries[2].key)),
-            ]),
+            _chipRow([conditionChip(conditionOrder[1]), conditionChip(conditionOrder[2])]),
             const SizedBox(height: 20),
-            const FieldLabel('Раздел'),
+            FieldLabel(l.section),
             _chipRow([
-              _chip('Все', _packType == null, () => setState(() => _packType = null)),
-              _chip(packTypeLabels[PackType.food]!, _packType == PackType.food,
-                  () => setState(() => _packType = PackType.food)),
-              _chip(packTypeLabels[PackType.water]!, _packType == PackType.water,
-                  () => setState(() => _packType = PackType.water)),
+              _chip(l.all, _packType == null, () => setState(() => _packType = null)),
+              packTypeChip(PackType.food),
+              packTypeChip(PackType.water),
             ]),
             const SizedBox(height: 8),
             // "Снаряжение" alone, full width — same pyramid PackTypeChips
             // uses for its longest label instead of squeezing 4 equal
             // columns and truncating it.
-            _chip(packTypeLabels[PackType.gear]!, _packType == PackType.gear,
-                () => setState(() => _packType = PackType.gear)),
+            packTypeChip(PackType.gear),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: () => Navigator.pop(
@@ -517,7 +521,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 textStyle: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              child: Text('Показать ($count ${itemWord(count)})'),
+              child: Text(l.showItems(l.itemCount(count))),
             ),
           ],
         ),
@@ -565,7 +569,7 @@ class _FilteredItemRow extends StatelessWidget {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          conditionLabels[item.condition]!,
+                          conditionLabel(context.l10n, item.condition),
                           style: TextStyle(fontSize: 13, color: conditionColor),
                         ),
                         if (categoryName != null)
@@ -582,7 +586,7 @@ class _FilteredItemRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(formatKg(item.weightGrams * item.quantity)),
+              Text(formatWeight(context, item.weightGrams * item.quantity)),
             ],
           ),
         ),
@@ -612,12 +616,12 @@ class _PackingForLine extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Собираю для: ',
+                context.l10n.packingFor,
                 style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.8), fontSize: 14),
               ),
               Flexible(
                 child: Text(
-                  trip.name,
+                  tripName(context.l10n, trip),
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: AppColors.accent,

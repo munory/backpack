@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/database.dart';
 import '../data/providers.dart';
+import 'l10n.dart';
 import 'navigation.dart';
 import 'theme.dart';
 
@@ -30,7 +31,7 @@ Future<void> showTripSwitcherMenu(BuildContext context, WidgetRef ref, Trip curr
             children: [
               Expanded(
                 child: Text(
-                  t.name,
+                  tripName(context.l10n, t),
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: t.id == current.id ? AppColors.accent : AppColors.textPrimary,
@@ -43,7 +44,7 @@ Future<void> showTripSwitcherMenu(BuildContext context, WidgetRef ref, Trip curr
           ),
         ),
       const PopupMenuDivider(),
-      const PopupMenuItem(value: -1, child: Text('Все походы')),
+      PopupMenuItem(value: -1, child: Text(context.l10n.allTrips)),
     ],
   );
   if (selected == null) return;

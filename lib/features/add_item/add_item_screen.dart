@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../common/category_form_sheet.dart';
 import '../../common/input_decoration.dart';
+import '../../common/l10n.dart';
 import '../../common/pack_type_chips.dart';
 import '../../common/primary_button.dart';
 import '../../common/text_format.dart';
@@ -27,16 +28,6 @@ class AddItemScreen extends ConsumerStatefulWidget {
   ConsumerState<AddItemScreen> createState() => _AddItemScreenState();
 }
 
-const _gramsPerOunce = 28.3495;
-
-/// Whole number if it rounds cleanly, otherwise up to 2 decimal places —
-/// used when switching weight units so the field shows a value someone
-/// would actually type, not a long float tail.
-String _formatWeightValue(double value) {
-  if (value == value.roundToDouble()) return value.round().toString();
-  return value.toStringAsFixed(2).replaceFirst(RegExp(r'0$'), '').replaceFirst(RegExp(r'\.$'), '');
-}
-
 class _AddItemScreenState extends ConsumerState<AddItemScreen> {
   final _nameController = TextEditingController();
   final _weightController = TextEditingController();
@@ -46,7 +37,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
   // Only used when _categoryId is null — an item without a category still
   // needs to know its own section to count toward the right total.
   PackType _itemPackType = PackType.gear;
-  String _weightUnit = 'г';
+  bool _inOunces = false;
   String? _error;
 
   // The field only ever displays a *rounded* value, so re-parsing that text
@@ -63,7 +54,6 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     final editing = widget.editing;
     if (editing != null) {
       _nameController.text = editing.name;
-      _weightController.text = editing.weightGrams.toString();
       _preciseGrams = editing.weightGrams.toDouble();
       _categoryId = editing.categoryId;
       _condition = editing.condition;
@@ -78,21 +68,41 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     _weightController.addListener(_syncPreciseGramsFromText);
   }
 
+  bool _unitChosen = false;
+
+  /// The field starts in the user's unit (grams, or ounces for pounds) —
+  /// done here rather than in initState, which can't read settings that
+  /// depend on the language yet.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_unitChosen) return;
+    _unitChosen = true;
+    _inOunces = weightUnitOf(context) == WeightUnit.imperial;
+    _showPreciseGrams();
+  }
+
+  void _showPreciseGrams() {
+    if (_preciseGrams == null) return;
+    _suppressWeightSync = true;
+    _weightController.text = formatInputNumber(
+      _inOunces ? _preciseGrams! / gramsPerOunce : _preciseGrams!,
+      languageCode: context.l10n.localeName,
+    );
+    _suppressWeightSync = false;
+  }
+
   void _syncPreciseGramsFromText() {
     if (_suppressWeightSync) return;
-    final raw = double.tryParse(_weightController.text.replaceAll(',', '.'));
-    _preciseGrams = raw == null ? null : (_weightUnit == 'унц.' ? raw * _gramsPerOunce : raw);
+    final raw = parseInputNumber(_weightController.text);
+    _preciseGrams = raw == null ? null : (_inOunces ? raw * gramsPerOunce : raw);
     setState(() {});
   }
 
-  void _onWeightUnitChanged(String newUnit) {
-    if (_preciseGrams != null) {
-      final displayValue = newUnit == 'унц.' ? _preciseGrams! / _gramsPerOunce : _preciseGrams!;
-      _suppressWeightSync = true;
-      _weightController.text = _formatWeightValue(displayValue);
-      _suppressWeightSync = false;
-    }
-    setState(() => _weightUnit = newUnit);
+  void _onWeightUnitChanged(bool inOunces) {
+    _inOunces = inOunces;
+    _showPreciseGrams();
+    setState(() {});
   }
 
   bool get _canSubmit {
@@ -117,11 +127,11 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     final name = capitalizeFirst(_nameController.text.trim());
 
     if (name.isEmpty) {
-      setState(() => _error = 'Введи название вещи');
+      setState(() => _error = context.l10n.itemNameRequired);
       return;
     }
     if (_preciseGrams == null || _preciseGrams! <= 0) {
-      setState(() => _error = 'Укажи вес');
+      setState(() => _error = context.l10n.weightRequired);
       return;
     }
     final weightGrams = _preciseGrams!.round();
@@ -158,15 +168,16 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     final flat = flattenCategories(categories);
 
     final isEditing = widget.editing != null;
+    final l = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Редактировать вещь' : 'Добавить вещь')),
+      appBar: AppBar(title: Text(isEditing ? l.editItem : l.addItem)),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const FieldLabel('Название вещи'),
+            FieldLabel(l.itemName),
             SizedBox(
               height: kFieldHeight,
               child: TextField(
@@ -175,7 +186,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const FieldLabel('Вес'),
+            FieldLabel(l.weight),
             SizedBox(
               height: kFieldHeight,
               child: TextField(
@@ -193,18 +204,18 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
                           color: AppColors.textPrimary.withValues(alpha: 0.15),
                         ),
                         const SizedBox(width: 8),
-                        PopupMenuButton<String>(
-                          initialValue: _weightUnit,
+                        PopupMenuButton<bool>(
+                          initialValue: _inOunces,
                           onSelected: _onWeightUnitChanged,
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(value: 'г', child: Text('г')),
-                            PopupMenuItem(value: 'унц.', child: Text('унц.')),
+                          itemBuilder: (context) => [
+                            PopupMenuItem(value: false, child: Text(l.unitG)),
+                            PopupMenuItem(value: true, child: Text(l.unitOz)),
                           ],
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                _weightUnit,
+                                _inOunces ? l.unitOz : l.unitG,
                                 style: TextStyle(color: AppColors.textPrimary),
                               ),
                               const Icon(Icons.arrow_drop_down, size: 18),
@@ -219,10 +230,10 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
             ),
             const SizedBox(height: 20),
             FieldLabel(
-              'Количество',
+              l.quantity,
               trailing: _quantity > 1 && _preciseGrams != null
                   ? Text(
-                      '= ${formatKg((_preciseGrams! * _quantity).round())} всего',
+                      l.weightTotal(formatWeight(context, (_preciseGrams! * _quantity).round())),
                       style: TextStyle(
                         color: AppColors.textSecondary.withValues(alpha: 0.6),
                         fontSize: 12,
@@ -259,12 +270,12 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const FieldLabel('Категория'),
+            FieldLabel(l.category),
             AppSelectField<int?>(
               value: _categoryId,
               onChanged: (v) => setState(() => _categoryId = v),
               options: [
-                const SelectOption(null, 'Без категории'),
+                SelectOption(null, l.noCategory),
                 for (final f in flat)
                   SelectOption(f.category.id, f.category.name, depth: f.depth + 1),
               ],
@@ -275,28 +286,27 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
               child: TextButton.icon(
                 onPressed: _createCategory,
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('Создать категорию'),
+                label: Text(l.createCategory),
               ),
             ),
             // No category chosen — the item still needs to know its own
             // section to count toward the right total on the dashboard.
             if (_categoryId == null) ...[
               const SizedBox(height: 20),
-              const FieldLabel('Раздел'),
+              FieldLabel(l.section),
               PackTypeChips(
                 value: _itemPackType,
                 onChanged: (v) => setState(() => _itemPackType = v),
               ),
             ],
             const SizedBox(height: 20),
-            const FieldLabel('Состояние'),
+            FieldLabel(l.condition),
             AppSelectField<ItemCondition>(
               value: _condition,
               onChanged: (v) => setState(() => _condition = v),
               pinSelectedFirst: true,
               options: [
-                for (final entry in conditionLabels.entries)
-                  SelectOption(entry.key, entry.value),
+                for (final c in conditionOrder) SelectOption(c, conditionLabel(l, c)),
               ],
             ),
             if (_error != null) ...[
@@ -305,7 +315,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
             ],
             const SizedBox(height: 32),
             PrimaryButton(
-              label: isEditing ? 'Сохранить' : 'Добавить вещь',
+              label: isEditing ? l.save : l.addItem,
               onPressed: _canSubmit ? _submit : null,
             ),
           ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../common/app_checkbox.dart';
 import '../../common/item_name.dart';
+import '../../common/l10n.dart';
 import '../../common/theme.dart';
 import '../../common/weight_format.dart';
 import '../../data/database.dart';
@@ -29,15 +30,16 @@ class PackingScreen extends ConsumerWidget {
     final packed = items.where(inBag).length;
     final total = items.length;
     final done = total > 0 && packed == total;
+    final l = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Чек-лист сборов'),
+        title: Text(l.packingChecklist),
         actions: [
           TextButton(
             onPressed: trip == null || packed == 0 ? null : () => db.resetInBag(trip.id),
             style: TextButton.styleFrom(foregroundColor: AppColors.accent),
-            child: const Text('Начать заново'),
+            child: Text(l.startOver),
           ),
           const SizedBox(width: 8),
         ],
@@ -46,8 +48,7 @@ class PackingScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
           Text(
-            'Отмечай, что уже лежит в рюкзаке. Сам список вещей собирается '
-            'галочками в Инвентаре.',
+            l.packingHint,
             style: TextStyle(
               fontSize: 13,
               height: 1.4,
@@ -56,7 +57,7 @@ class PackingScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            done ? 'Всё уложено, можно в путь' : '$packed из $total уложено',
+            done ? l.allPacked : l.packedProgress(packed, total),
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -76,7 +77,7 @@ class PackingScreen extends ConsumerWidget {
           const SizedBox(height: 20),
           for (final group in groups) ...[
             _Section(
-              title: group.title,
+              title: group.title ?? l.uncategorized,
               items: [
                 for (final i in items)
                   if (group.category != null
@@ -173,7 +174,7 @@ class _Section extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(formatKg(itemTotalGrams(item))),
+                            Text(formatWeight(context, itemTotalGrams(item))),
                           ],
                         ),
                       ),

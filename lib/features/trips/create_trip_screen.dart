@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../common/input_decoration.dart';
+import '../../common/l10n.dart';
 import '../../common/primary_button.dart';
 import '../../common/text_format.dart';
 import '../../common/theme.dart';
+import '../../common/weight_format.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
 
@@ -38,7 +40,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     if (editing != null) {
       if (!editing.isDraft) _nameController.text = editing.name;
       final target = editing.targetWeightGrams;
-      if (target != null) _targetController.text = _formatKgInput(target);
+      // initState can't read the language yet — prefilled in
+      // didChangeDependencies instead.
+      _initialTargetGrams = target;
       _startDate = editing.startDate;
       _endDate = editing.endDate;
     }
@@ -52,9 +56,22 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     super.dispose();
   }
 
-  String _formatKgInput(int grams) {
-    final kg = grams / 1000;
-    return kg == kg.roundToDouble() ? kg.round().toString() : kg.toString();
+  int? _initialTargetGrams;
+
+  /// What the target field was prefilled with — left untouched, the exact
+  /// stored grams are kept instead of the rounded value shown.
+  String? _initialTargetText;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialTargetGrams case final grams? when _initialTargetText == null) {
+      _initialTargetText = formatInputNumber(
+        grams / gramsPerBigUnit(weightUnitOf(context)),
+        languageCode: context.l10n.localeName,
+      );
+      _targetController.text = _initialTargetText!;
+    }
   }
 
   Future<void> _pickDates() async {
@@ -66,7 +83,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       initialDateRange: _startDate != null && _endDate != null
           ? DateTimeRange(start: _startDate!, end: _endDate!)
           : null,
-      helpText: 'Даты похода',
+      helpText: context.l10n.tripDates,
     );
     if (range != null) {
       setState(() {
@@ -78,8 +95,12 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
   Future<void> _submit() async {
     final name = capitalizeFirst(_nameController.text.trim());
-    final targetKg = double.tryParse(_targetController.text.replaceAll(',', '.'));
-    final targetGrams = (targetKg != null && targetKg > 0) ? (targetKg * 1000).round() : null;
+    final target = parseInputNumber(_targetController.text);
+    final targetGrams = _targetController.text == _initialTargetText
+        ? _initialTargetGrams
+        : (target != null && target > 0)
+            ? (target * gramsPerBigUnit(weightUnitOf(context))).round()
+            : null;
     final db = ref.read(databaseProvider);
     final editing = widget.editing;
 
@@ -109,24 +130,25 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     final isEditing = widget.editing != null && !widget.editing!.isDraft;
     final isCreating = widget.editing == null;
     final trips = ref.watch(tripsProvider).value ?? const <Trip>[];
-    final dates = formatTripDates(_startDate, _endDate);
+    final l = context.l10n;
+    final dates = formatTripDates(_startDate, _endDate, languageCode: l.localeName);
 
     return Scaffold(
-      appBar: AppBar(title: Text(isEditing ? 'Редактировать поход' : 'Новый поход')),
+      appBar: AppBar(title: Text(isEditing ? l.editTrip : l.newTrip)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const FieldLabel('Название'),
+          FieldLabel(l.name),
           SizedBox(
             height: kFieldHeight,
             child: TextField(
               controller: _nameController,
               textCapitalization: TextCapitalization.sentences,
-              decoration: appFieldDecoration(hint: 'Например, Карелия на выходные'),
+              decoration: appFieldDecoration(hint: l.tripNameHint),
             ),
           ),
           const SizedBox(height: 20),
-          const FieldLabel('Даты (необязательно)'),
+          FieldLabel(l.datesOptional),
           InkWell(
             borderRadius: BorderRadius.circular(4),
             onTap: _pickDates,
@@ -141,7 +163,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      dates ?? 'Выбрать даты',
+                      dates ?? l.pickDates,
                       style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                             color: dates == null
                                 ? AppColors.textSecondary.withValues(alpha: 0.6)
@@ -152,7 +174,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                   if (dates != null)
                     IconButton(
                       icon: const Icon(Icons.close, size: 18),
-                      tooltip: 'Убрать даты',
+                      tooltip: l.clearDates,
                       onPressed: () => setState(() {
                         _startDate = null;
                         _endDate = null;
@@ -169,7 +191,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          const FieldLabel('Целевой вес рюкзака, кг (необязательно)'),
+          FieldLabel(l.targetOptional(bigUnitLabel(l, weightUnitOf(context)))),
           SizedBox(
             height: kFieldHeight,
             child: TextField(
@@ -180,19 +202,19 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           ),
           if (isCreating && trips.isNotEmpty) ...[
             const SizedBox(height: 20),
-            const FieldLabel('Начать с'),
+            FieldLabel(l.startFrom),
             AppSelectField<int?>(
               value: _copyFromTripId,
               onChanged: (v) => setState(() => _copyFromTripId = v),
               options: [
-                const SelectOption(null, 'Пустой список'),
-                for (final t in trips) SelectOption(t.id, 'Список похода «${t.name}»'),
+                SelectOption(null, l.emptyList),
+                for (final t in trips) SelectOption(t.id, l.listOfTrip(tripName(l, t))),
               ],
             ),
           ],
           const SizedBox(height: 32),
           PrimaryButton(
-            label: isEditing ? 'Сохранить' : 'Создать поход',
+            label: isEditing ? l.save : l.createTrip,
             onPressed: _canSubmit ? _submit : null,
           ),
         ],

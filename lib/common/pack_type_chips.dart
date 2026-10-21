@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/database.dart';
+import 'l10n.dart';
 import 'theme.dart';
 
 /// The Food/Water/Gear picker used both for a category's "Раздел" and for
@@ -42,18 +43,19 @@ class PackTypeChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            Expanded(child: _chip(PackType.food, 'Еда')),
+            Expanded(child: _chip(PackType.food, l.packFood)),
             const SizedBox(width: 8),
-            Expanded(child: _chip(PackType.water, 'Вода')),
+            Expanded(child: _chip(PackType.water, l.packWater)),
           ],
         ),
         const SizedBox(height: 8),
-        _chip(PackType.gear, 'Снаряжение'),
+        _chip(PackType.gear, l.packGear),
       ],
     );
   }

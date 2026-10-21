@@ -1,6 +1,7 @@
 import 'package:backpack/common/text_format.dart';
 import 'package:backpack/data/database.dart';
 import 'package:backpack/data/providers.dart';
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -110,25 +111,59 @@ void main() {
 
   group('formatTripDates', () {
     final today = DateTime(2026, 10, 18);
+    String? ru(DateTime? a, DateTime? b) =>
+        formatTripDates(a, b, languageCode: 'ru', today: today);
+    String? en(DateTime? a, DateTime? b) =>
+        formatTripDates(a, b, languageCode: 'en', today: today);
 
     test('no dates → null', () {
-      expect(formatTripDates(null, null, today: today), isNull);
+      expect(ru(null, null), isNull);
+      expect(en(null, null), isNull);
     });
 
     test('same month collapses to one month name', () {
-      expect(formatTripDates(DateTime(2026, 10, 12), DateTime(2026, 10, 14), today: today),
-          '12–14 окт');
+      expect(ru(DateTime(2026, 10, 12), DateTime(2026, 10, 14)), '12–14 окт');
+      expect(en(DateTime(2026, 10, 12), DateTime(2026, 10, 14)), 'Oct 12–14');
     });
 
     test('across months names both', () {
-      expect(formatTripDates(DateTime(2026, 10, 30), DateTime(2026, 11, 2), today: today),
-          '30 окт – 2 ноя');
+      expect(ru(DateTime(2026, 10, 30), DateTime(2026, 11, 2)), '30 окт – 2 ноя');
+      expect(en(DateTime(2026, 10, 30), DateTime(2026, 11, 2)), 'Oct 30 – Nov 2');
     });
 
     test('a single day, and a year only when it is not this year', () {
-      expect(formatTripDates(DateTime(2026, 10, 12), null, today: today), '12 окт');
-      expect(formatTripDates(DateTime(2027, 1, 5), DateTime(2027, 1, 5), today: today),
-          '5 янв 2027');
+      expect(ru(DateTime(2026, 10, 12), null), '12 окт');
+      expect(ru(DateTime(2027, 1, 5), DateTime(2027, 1, 5)), '5 янв 2027');
+      expect(en(DateTime(2026, 10, 12), null), 'Oct 12');
+      expect(en(DateTime(2027, 1, 5), DateTime(2027, 1, 7)), 'Jan 5–7, 2027');
     });
+  });
+
+  test('duplicating in English numbers "(copy)", and copying a Russian copy drops "(копия)"',
+      () async {
+    final id = await db.createTrip(name: 'Rockies');
+    final original = await (db.select(db.trips)..where((t) => t.id.equals(id))).getSingle();
+    final first = await db.duplicateTrip(original, copyWord: 'copy');
+    final second = await db.duplicateTrip(original, copyWord: 'copy');
+    final ruCopy = await db.createTrip(name: 'Rockies (копия)');
+    final fromRu = await db.duplicateTrip(
+      await (db.select(db.trips)..where((t) => t.id.equals(ruCopy))).getSingle(),
+      copyWord: 'copy',
+    );
+    final names = {for (final t in await db.select(db.trips).get()) t.id: t.name};
+
+    expect(names[first], 'Rockies (copy)');
+    expect(names[second], 'Rockies (copy 2)');
+    expect(names[fromRu], 'Rockies (copy 3)');
+  });
+
+  test('starter categories are named in the install language', () async {
+    // A second, separate in-memory database next to setUp's — on purpose.
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    final en = AppDatabase.forTesting(NativeDatabase.memory(), seedLanguage: 'en');
+    addTearDown(en.close);
+    final names = (await en.select(en.categories).get()).map((c) => c.name);
+    expect(names, containsAll(['Packs', 'Kitchen', 'Food', 'Water']));
+    expect((await db.select(db.categories).get()).map((c) => c.name), contains('Кухня'));
   });
 }

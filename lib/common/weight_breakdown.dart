@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/database.dart';
+import 'l10n.dart';
 import 'theme.dart';
 import 'weight_format.dart';
 
@@ -72,11 +73,7 @@ class _LegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = switch (type) {
-      PackType.food => 'Еда',
-      PackType.gear => 'Снаряжение',
-      PackType.water => 'Вода',
-    };
+    final label = packTypeLabel(context.l10n, type);
     return Column(
       children: [
         Row(
@@ -92,7 +89,7 @@ class _LegendItem extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 2),
-        Text(formatKg(grams), style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(formatWeight(context, grams), style: const TextStyle(fontWeight: FontWeight.w600)),
       ],
     );
   }

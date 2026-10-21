@@ -138,8 +138,9 @@ Map<PackType, int> _weightByPackType(List<Item> items, List<Category> categories
 
 /// One card's worth of items — either a real category, or the single
 /// catch-all "Неразобранное" bucket for every uncategorized item (when
-/// [category] is null; [packType] is meaningless in that case).
-typedef CategoryGroup = ({Category? category, String title, PackType packType, int weightGrams});
+/// [category] is null; [packType] is meaningless in that case). [title] is
+/// null for that bucket too — its name comes from the current language.
+typedef CategoryGroup = ({Category? category, String? title, PackType packType, int weightGrams});
 
 List<CategoryGroup> _rootCategoryTotals(List<Category> categories, List<Item> items) {
   final childrenOf = <int?, List<Category>>{};
@@ -176,7 +177,7 @@ List<CategoryGroup> _rootCategoryTotals(List<Category> categories, List<Item> it
   if (uncategorizedTotal > 0) {
     groups.add((
       category: null,
-      title: 'Неразобранное',
+      title: null,
       packType: PackType.gear,
       weightGrams: uncategorizedTotal,
     ));

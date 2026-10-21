@@ -1,9 +1,12 @@
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'common/l10n.dart';
 import 'common/navigation.dart';
 import 'common/theme.dart';
+import 'common/weight_format.dart';
 import 'data/database.dart';
 import 'data/providers.dart';
 import 'features/add_item/add_item_screen.dart';
@@ -18,9 +21,12 @@ void main() async {
   // databaseProvider open its own — the app's theme preference has to be
   // read before the first frame, so something has to open the database
   // before runApp regardless.
-  final db = AppDatabase();
+  final phoneLanguage = PlatformDispatcher.instance.locale.languageCode;
+  final db = AppDatabase(seedLanguage: phoneLanguage);
   final settings = await db.select(db.appSettings).getSingle();
   appThemeMode.value = settings.themeMode;
+  appLanguage.value = settings.language;
+  appWeightUnit.value = settings.weightUnit;
 
   runApp(
     ProviderScope(
@@ -50,18 +56,23 @@ class _BackpackAppState extends State<BackpackApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // The system-brightness case is covered by the observer below; this
-    // covers the user's own choice from Профиль changing instead.
-    appThemeMode.addListener(_onThemeChanged);
+    // covers the user's own choice from Профиль changing instead (the same
+    // for language and weight units).
+    appThemeMode.addListener(_onSettingChanged);
+    appLanguage.addListener(_onSettingChanged);
+    appWeightUnit.addListener(_onSettingChanged);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    appThemeMode.removeListener(_onThemeChanged);
+    appThemeMode.removeListener(_onSettingChanged);
+    appLanguage.removeListener(_onSettingChanged);
+    appWeightUnit.removeListener(_onSettingChanged);
     super.dispose();
   }
 
-  void _onThemeChanged() => setState(() {});
+  void _onSettingChanged() => setState(() {});
 
   @override
   void didChangePlatformBrightness() => setState(() {});
@@ -71,11 +82,12 @@ class _BackpackAppState extends State<BackpackApp> with WidgetsBindingObserver {
     return MaterialApp(
       title: 'Backpack',
       theme: buildAppTheme(),
-      // Russian for the framework's own UI too (date picker months and
-      // buttons, text-selection menu) — otherwise those stay in English.
-      locale: const Locale('ru'),
-      supportedLocales: const [Locale('ru')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      // Null follows the phone; a phone in neither language gets English,
+      // the first supported locale. The delegates also translate the
+      // framework's own UI (date picker, text-selection menu).
+      locale: localeFor(appLanguage.value),
+      supportedLocales: const [Locale('en'), Locale('ru')],
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       // Not `const` — a `const HomeShell()` would be the exact same object
       // reference on every rebuild, and Flutter skips rebuilding a child
       // entirely when it's handed the identical widget instance again, which
@@ -91,6 +103,7 @@ class HomeShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tab = ref.watch(currentTabProvider);
+    final l = context.l10n;
 
     return Scaffold(
       // Not `const` here either, for the same reason as `home:` above — a
@@ -121,7 +134,7 @@ class HomeShell extends ConsumerWidget {
                 Expanded(
                   child: _NavItem(
                     icon: Icons.dashboard_outlined,
-                    label: 'Главная',
+                    label: l.navHome,
                     selected: tab == 0,
                     onTap: () => ref.read(currentTabProvider.notifier).state = 0,
                   ),
@@ -129,7 +142,7 @@ class HomeShell extends ConsumerWidget {
                 Expanded(
                   child: _NavItem(
                     icon: Icons.list_alt,
-                    label: 'Инвентарь',
+                    label: l.navInventory,
                     selected: tab == 1,
                     onTap: () => ref.read(currentTabProvider.notifier).state = 1,
                   ),
@@ -146,7 +159,7 @@ class HomeShell extends ConsumerWidget {
                 Expanded(
                   child: _NavItem(
                     icon: Icons.map_outlined,
-                    label: 'Походы',
+                    label: l.navTrips,
                     selected: tab == 2,
                     onTap: () => ref.read(currentTabProvider.notifier).state = 2,
                   ),
@@ -154,7 +167,7 @@ class HomeShell extends ConsumerWidget {
                 Expanded(
                   child: _NavItem(
                     icon: Icons.person_outline,
-                    label: 'Профиль',
+                    label: l.navProfile,
                     selected: tab == 3,
                     onTap: () => ref.read(currentTabProvider.notifier).state = 3,
                   ),

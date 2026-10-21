@@ -2,8 +2,11 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
+import '../l10n/app_localizations.dart';
 
 part 'database.g.dart';
 
@@ -18,21 +21,11 @@ enum ItemCondition { newItem, needsReplacement, wornOut }
 /// phone stays light (or vice versa). [system] defers to the phone.
 enum AppThemeMode { system, light, dark }
 
-/// Display labels for [ItemCondition] — the single source of truth so the
-/// add/edit form and the item list always agree on wording.
-const conditionLabels = {
-  ItemCondition.newItem: 'Готово к походу',
-  ItemCondition.wornOut: 'Требует ремонта',
-  ItemCondition.needsReplacement: 'Под замену',
-};
+/// The app's own language — [system] follows the phone.
+enum AppLanguage { system, ru, en }
 
-/// Display labels for [PackType] — used to tag an uncategorized item with
-/// its section inline, since it has no category name to show instead.
-const packTypeLabels = {
-  PackType.food: 'Еда',
-  PackType.gear: 'Снаряжение',
-  PackType.water: 'Вода',
-};
+/// How weights are shown and typed in — always stored in grams regardless.
+enum WeightUnit { metric, imperial }
 
 /// The master, trip-independent organizational tree (e.g. Sleep System >
 /// Base layers). Shared across every trip.
@@ -126,6 +119,12 @@ class AppSettings extends Table {
       integer().nullable().references(Trips, #id)();
   IntColumn get themeMode =>
       intEnum<AppThemeMode>().withDefault(const Constant(0))();
+  IntColumn get language =>
+      intEnum<AppLanguage>().withDefault(const Constant(0))();
+
+  /// Null until picked in Профиль — then the language decides (kilograms
+  /// for Russian, pounds for English).
+  IntColumn get weightUnit => intEnum<WeightUnit>().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -133,14 +132,18 @@ class AppSettings extends Table {
 
 @DriftDatabase(tables: [Categories, Items, Trips, TripItems, AppSettings])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  /// [seedLanguage] names the starter categories on a brand-new install —
+  /// the phone's language, since nobody has picked one in the app yet.
+  AppDatabase({this.seedLanguage = 'en'}) : super(_openConnection());
 
   /// For tests only — takes an executor directly (an in-memory database)
   /// instead of opening the real file on disk via [_openConnection].
-  AppDatabase.forTesting(super.executor);
+  AppDatabase.forTesting(super.executor, {this.seedLanguage = 'ru'});
+
+  final String seedLanguage;
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -187,6 +190,12 @@ class AppDatabase extends _$AppDatabase {
               const TripsCompanion(isDraft: Value(true), name: Value('Черновик')),
             );
           }
+          if (from < 17) {
+            await m.addColumn(appSettings, appSettings.language);
+          }
+          if (from < 18) {
+            await m.addColumn(appSettings, appSettings.weightUnit);
+          }
         },
       );
 
@@ -195,13 +204,14 @@ class AppDatabase extends _$AppDatabase {
   /// renameable/deletable category. "Рюкзаки" is just like any other —
   /// a backpack is simply a piece of gear, same as a stove or a jacket.
   Future<void> _seedDefaultCategories() async {
-    const starters = [
-      ('Рюкзаки', PackType.gear, 'backpack', 'terracotta'),
-      ('Спальная система', PackType.gear, 'sleep', 'plum'),
-      ('Кухня', PackType.gear, 'kitchen', 'mustard'),
-      ('Одежда', PackType.gear, 'clothing', 'sage'),
-      ('Еда', PackType.food, 'food', 'terracotta'),
-      ('Вода', PackType.water, 'water', 'teal'),
+    final l = lookupAppLocalizations(Locale(seedLanguage == 'ru' ? 'ru' : 'en'));
+    final starters = [
+      (l.seedPacks, PackType.gear, 'backpack', 'terracotta'),
+      (l.seedSleep, PackType.gear, 'sleep', 'plum'),
+      (l.seedKitchen, PackType.gear, 'kitchen', 'mustard'),
+      (l.seedClothing, PackType.gear, 'clothing', 'sage'),
+      (l.packFood, PackType.food, 'food', 'terracotta'),
+      (l.packWater, PackType.water, 'water', 'teal'),
     ];
     for (final (name, packType, icon, color) in starters) {
       await into(categories).insert(
@@ -285,10 +295,10 @@ class AppDatabase extends _$AppDatabase {
 
   /// A copy of [trip] with the same list, named "X (копия)"/"(копия N)" the
   /// same way duplicated items are. Becomes the active trip.
-  Future<int> duplicateTrip(Trip trip) async {
+  Future<int> duplicateTrip(Trip trip, {String copyWord = 'копия'}) async {
     final all = await select(trips).get();
     return createTrip(
-      name: _nextCopyName(trip.name, all.map((t) => t.name)),
+      name: _nextCopyName(trip.name, all.map((t) => t.name), copyWord),
       targetWeightGrams: trip.targetWeightGrams,
       startDate: trip.startDate,
       endDate: trip.endDate,
@@ -372,6 +382,14 @@ class AppDatabase extends _$AppDatabase {
     return update(appSettings).write(AppSettingsCompanion(themeMode: Value(mode)));
   }
 
+  Future<void> updateLanguage(AppLanguage language) {
+    return update(appSettings).write(AppSettingsCompanion(language: Value(language)));
+  }
+
+  Future<void> updateWeightUnit(WeightUnit unit) {
+    return update(appSettings).write(AppSettingsCompanion(weightUnit: Value(unit)));
+  }
+
   /// Adds an item to the master gear closet. Not tied to any trip — packing
   /// it for a specific trip is a separate, later action. [categoryId] is
   /// optional; when omitted, [packType] is what makes it count correctly.
@@ -423,9 +441,9 @@ class AppDatabase extends _$AppDatabase {
   /// *slightly* different from the original (a second thermos in a
   /// different color, a spare with different wear) — an exact copy has
   /// quantity for that instead — so callers open it straight into editing.
-  Future<Item> duplicateItem(Item item) async {
+  Future<Item> duplicateItem(Item item, {String copyWord = 'копия'}) async {
     final siblings = await select(items).get();
-    final newName = _nextCopyName(item.name, siblings.map((s) => s.name));
+    final newName = _nextCopyName(item.name, siblings.map((s) => s.name), copyWord);
 
     final id = await into(items).insert(
       ItemsCompanion.insert(
@@ -492,9 +510,12 @@ class AppDatabase extends _$AppDatabase {
 /// so on, numbered past every copy of the same base name in [existing].
 /// Strips a "(копия N)" the source already carries first, so copying a
 /// copy doesn't pile up into "(копия) (копия)". Shared by items and trips.
-String _nextCopyName(String name, Iterable<String> existing) {
+/// [copyWord] is the current language's "копия"/"copy".
+String _nextCopyName(String name, Iterable<String> existing, String copyWord) {
   final baseName = _stripCopySuffix(name);
-  final copyPattern = RegExp('^${RegExp.escape(baseName)} \\(копия(?: (\\d+))?\\)\$');
+  final copyPattern = RegExp(
+    '^${RegExp.escape(baseName)} \\(${RegExp.escape(copyWord)}(?: (\\d+))?\\)\$',
+  );
   var highest = 0;
   for (final other in existing) {
     final match = copyPattern.firstMatch(other);
@@ -503,11 +524,13 @@ String _nextCopyName(String name, Iterable<String> existing) {
     if (number > highest) highest = number;
   }
   final next = highest + 1;
-  return next == 1 ? '$baseName (копия)' : '$baseName (копия $next)';
+  return next == 1 ? '$baseName ($copyWord)' : '$baseName ($copyWord $next)';
 }
 
+/// Either language's suffix — a copy made in Russian is still a copy after
+/// switching to English.
 String _stripCopySuffix(String name) {
-  final pattern = RegExp(r'\s*\(копия(?: \d+)?\)$');
+  final pattern = RegExp(r'\s*\((?:копия|copy)(?: \d+)?\)$');
   var result = name;
   while (pattern.hasMatch(result)) {
     result = result.replaceFirst(pattern, '');

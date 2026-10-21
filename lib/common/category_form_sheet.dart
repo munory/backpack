@@ -6,6 +6,7 @@ import '../data/database.dart';
 import '../data/providers.dart';
 import 'category_style.dart';
 import 'input_decoration.dart';
+import 'l10n.dart';
 import 'pack_type_chips.dart';
 import 'text_format.dart';
 import 'theme.dart';
@@ -117,7 +118,7 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
   Future<void> _submit(List<Category> categories) async {
     final name = capitalizeFirst(_nameController.text.trim());
     if (name.isEmpty) {
-      setState(() => _error = 'Введи название категории');
+      setState(() => _error = context.l10n.categoryNameRequired);
       return;
     }
 
@@ -154,14 +155,13 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
       context: context,
       builder: (context) => AlertDialog(
         content: Text(
-          'Пока нет ни одной категории — создайте первую, и потом '
-          'сможете сделать её родителем для новых.',
+          context.l10n.noCategoriesYetInfo,
           style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Понятно'),
+            child: Text(context.l10n.gotIt),
           ),
         ],
       ),
@@ -172,6 +172,7 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesProvider).value ?? const <Category>[];
     final editing = widget.editing;
+    final l = context.l10n;
     // Editing a category can't offer itself or its own descendants as a new
     // parent — that would create a cycle in the tree.
     final excluded =
@@ -199,12 +200,12 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
               ),
               const SizedBox(height: 16),
               Text(
-                editing == null ? 'Новая категория' : 'Редактировать категорию',
+                editing == null ? l.newCategory : l.editCategory,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-              const FieldLabel('Название категории'),
+              FieldLabel(l.categoryName),
               SizedBox(
                 height: kFieldHeight,
                 child: TextField(
@@ -214,7 +215,7 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
               ),
               const SizedBox(height: 20),
               FieldLabel(
-                'Родительская категория',
+                l.parentCategory,
                 // The info icon only explains why the list is just "Нет" —
                 // once a real category exists, that explanation no longer
                 // applies, so the icon should disappear with it.
@@ -231,18 +232,18 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
                 onChanged: (v) => setState(() => _parentId = v),
                 menuColor: AppColors.menuSurfaceOnElevated,
                 options: [
-                  const SelectOption(null, 'Нет (основная категория)'),
+                  SelectOption(null, l.noParent),
                   for (final f in flat)
                     SelectOption(f.category.id, f.category.name, depth: f.depth),
                 ],
               ),
               if (_parentId == null) ...[
                 const SizedBox(height: 20),
-                const FieldLabel('Раздел'),
+                FieldLabel(l.section),
                 PackTypeChips(value: _packType, onChanged: (v) => setState(() => _packType = v)),
               ],
               const SizedBox(height: 20),
-              const FieldLabel('Иконка'),
+              FieldLabel(l.icon),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 10,
@@ -258,7 +259,7 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
                 ],
               ),
               const SizedBox(height: 20),
-              const FieldLabel('Цвет'),
+              FieldLabel(l.color),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 10,
@@ -283,7 +284,7 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
                       style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
-                      child: const Text('Отмена'),
+                      child: Text(l.cancel),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -297,7 +298,7 @@ class _CategoryFormDialogState extends ConsumerState<_CategoryFormDialog> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         textStyle: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      child: Text(editing == null ? 'Создать' : 'Сохранить'),
+                      child: Text(editing == null ? l.create : l.save),
                     ),
                   ),
                 ],

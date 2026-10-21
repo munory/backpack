@@ -4,6 +4,7 @@ import '../data/database.dart';
 import 'app_checkbox.dart';
 import 'category_style.dart';
 import 'item_name.dart';
+import 'l10n.dart';
 import 'theme.dart';
 import 'weight_format.dart';
 
@@ -99,11 +100,11 @@ class _CategoryCardState extends State<CategoryCard> {
         Offset.zero & overlay.size,
       ),
       items: [
-        if (canEdit) const PopupMenuItem(value: 'edit', child: Text('Редактировать')),
+        if (canEdit) PopupMenuItem(value: 'edit', child: Text(context.l10n.edit)),
         if (canDelete)
           PopupMenuItem(
             value: 'delete',
-            child: Text('Удалить', style: TextStyle(color: AppColors.overWeight)),
+            child: Text(context.l10n.delete, style: TextStyle(color: AppColors.overWeight)),
           ),
       ],
     );
@@ -158,7 +159,7 @@ class _CategoryCardState extends State<CategoryCard> {
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
-                  Text(formatKg(widget.weightGrams)),
+                  Text(formatWeight(context, widget.weightGrams)),
                   const SizedBox(width: 8),
                   Icon(_expanded ? Icons.expand_less : Icons.expand_more, size: 20),
                 ],
@@ -176,7 +177,7 @@ class _CategoryCardState extends State<CategoryCard> {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Пока пусто',
+                          context.l10n.categoryEmpty,
                           style: TextStyle(
                             color: AppColors.textSecondary.withValues(alpha: 0.6),
                             fontSize: 13,
@@ -204,7 +205,7 @@ class _CategoryCardState extends State<CategoryCard> {
                                 // catch-all — a real category already says
                                 // what section it's in via its own title.
                                 packTypeLabel: category == null
-                                    ? packTypeLabels[item.packType ?? PackType.gear]
+                                    ? packTypeLabel(context.l10n, item.packType ?? PackType.gear)
                                     : null,
                                 ownedQuantity: widget.ownedQuantities?[item.id],
                                 onTripQuantityChanged: widget.onTripQuantityChanged,
@@ -258,7 +259,7 @@ class _AddItemRow extends StatelessWidget {
           children: [
             Icon(Icons.add, size: 16, color: AppColors.accent),
             const SizedBox(width: 6),
-            Text('Добавить вещь', style: TextStyle(color: AppColors.accent, fontSize: 13)),
+            Text(context.l10n.addItem, style: TextStyle(color: AppColors.accent, fontSize: 13)),
           ],
         ),
       ),
@@ -314,8 +315,8 @@ class _ItemRow extends StatelessWidget {
         Offset.zero & overlay.size,
       ),
       items: [
-        if (canEdit) const PopupMenuItem(value: 'edit', child: Text('Редактировать')),
-        if (canDuplicate) const PopupMenuItem(value: 'duplicate', child: Text('Дублировать')),
+        if (canEdit) PopupMenuItem(value: 'edit', child: Text(context.l10n.edit)),
+        if (canDuplicate) PopupMenuItem(value: 'duplicate', child: Text(context.l10n.duplicate)),
         if (canDestroy)
           PopupMenuItem(
             value: 'destroy',
@@ -404,7 +405,7 @@ class _ItemRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  formatKg(item.weightGrams * item.quantity),
+                  formatWeight(context, item.weightGrams * item.quantity),
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               ],
@@ -421,7 +422,7 @@ class _ItemRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    conditionLabels[item.condition]!,
+                    conditionLabel(context.l10n, item.condition),
                     style: TextStyle(fontSize: 13, color: conditionColor),
                   ),
                   if (packTypeLabel != null)
@@ -473,7 +474,7 @@ class _TripQuantityPicker extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Беру $n',
+                    context.l10n.takeN(n),
                     style: TextStyle(
                       color: n == value ? AppColors.accent : AppColors.textPrimary,
                       fontWeight: n == value ? FontWeight.w600 : FontWeight.normal,
@@ -500,7 +501,7 @@ class _TripQuantityPicker extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '$value из $max',
+              context.l10n.nOfM(value, max),
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.accent,

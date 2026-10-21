@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../common/empty_state.dart';
+import '../../common/l10n.dart';
 import '../../common/navigation.dart';
 import '../../common/text_format.dart';
 import '../../common/theme.dart';
@@ -36,13 +37,14 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
     final trips = ref.watch(tripsProvider).value ?? const <Trip>[];
     final summaries = ref.watch(tripSummariesProvider).value ?? const <int, TripSummary>{};
     final activeId = ref.watch(appSettingsProvider).value?.activeTripId;
+    final l = context.l10n;
 
     if (trips.isEmpty) {
       return EmptyStateView(
         icon: Icons.map_outlined,
-        title: 'Походов пока нет',
-        subtitle: 'Создай поход, чтобы собрать для него свой список вещей и следить за весом.',
-        ctaLabel: 'Создать поход',
+        title: l.noTrips,
+        subtitle: l.noTripsSubtitle,
+        ctaLabel: l.createTrip,
         ctaIcon: Icons.add,
         onCta: _openForm,
       );
@@ -71,16 +73,16 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Мои походы',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                  l.myTrips,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                 ),
               ),
               TextButton.icon(
                 onPressed: _openForm,
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('Новый поход'),
+                label: Text(l.newTrip),
                 style: TextButton.styleFrom(foregroundColor: AppColors.accent),
               ),
             ],
@@ -96,7 +98,7 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
                 child: Row(
                   children: [
                     Text(
-                      'Архив · ${past.length}',
+                      l.archive(past.length),
                       style: TextStyle(
                         color: AppColors.textSecondary.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w600,
@@ -138,6 +140,7 @@ class _TripCard extends ConsumerWidget {
     final overlay = Navigator.of(context).overlay!.context.findRenderObject()! as RenderBox;
     final topLeft = box.localToGlobal(Offset.zero, ancestor: overlay);
     final bottomRight = box.localToGlobal(box.size.bottomRight(Offset.zero), ancestor: overlay);
+    final l = context.l10n;
     final selected = await showMenu<String>(
       context: context,
       position: RelativeRect.fromRect(
@@ -146,14 +149,14 @@ class _TripCard extends ConsumerWidget {
       ),
       items: [
         if (trip.isDraft)
-          const PopupMenuItem(value: 'edit', child: Text('Превратить в поход'))
+          PopupMenuItem(value: 'edit', child: Text(l.turnIntoTrip))
         else ...[
-          const PopupMenuItem(value: 'edit', child: Text('Редактировать')),
-          const PopupMenuItem(value: 'duplicate', child: Text('Дублировать')),
+          PopupMenuItem(value: 'edit', child: Text(l.edit)),
+          PopupMenuItem(value: 'duplicate', child: Text(l.duplicate)),
         ],
         PopupMenuItem(
           value: 'delete',
-          child: Text('Удалить', style: TextStyle(color: AppColors.overWeight)),
+          child: Text(l.delete, style: TextStyle(color: AppColors.overWeight)),
         ),
       ],
     );
@@ -165,7 +168,7 @@ class _TripCard extends ConsumerWidget {
       case 'duplicate':
         // Like a duplicated item, a copied trip almost always needs a new
         // name/dates — open it straight into editing.
-        final id = await db.duplicateTrip(trip);
+        final id = await db.duplicateTrip(trip, copyWord: l.copyWord);
         final copy = await (db.select(db.trips)..where((t) => t.id.equals(id))).getSingle();
         if (context.mounted) {
           Navigator.of(context).push(
@@ -178,12 +181,13 @@ class _TripCard extends ConsumerWidget {
   }
 
   Future<bool> _confirmDelete(BuildContext context) async {
+    final l = context.l10n;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Удалить «${trip.name}»?'),
+        title: Text(l.deleteTripTitle(tripName(l, trip))),
         content: Text(
-          'Список вещей этого похода удалится. Сами вещи останутся в Инвентаре.',
+          l.deleteTripBody,
           style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
         ),
         actions: [
@@ -193,7 +197,7 @@ class _TripCard extends ConsumerWidget {
                 child: TextButton(
                   onPressed: () => Navigator.pop(context, false),
                   style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
-                  child: const Text('Отмена'),
+                  child: Text(l.cancel),
                 ),
               ),
               const SizedBox(width: 12),
@@ -201,7 +205,7 @@ class _TripCard extends ConsumerWidget {
                 child: FilledButton(
                   style: FilledButton.styleFrom(backgroundColor: AppColors.overWeight),
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Удалить'),
+                  child: Text(l.delete),
                 ),
               ),
             ],
@@ -217,9 +221,10 @@ class _TripCard extends ConsumerWidget {
     final grams = summary?.grams ?? 0;
     final count = summary?.itemCount ?? 0;
     final target = trip.targetWeightGrams;
-    final dates = formatTripDates(trip.startDate, trip.endDate);
+    final l = context.l10n;
+    final dates = formatTripDates(trip.startDate, trip.endDate, languageCode: l.localeName);
     final over = target != null && grams > target;
-    final meta = [?dates, '$count ${itemWord(count)}'].join(' · ');
+    final meta = [?dates, l.itemCount(count)].join(' · ');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -253,7 +258,7 @@ class _TripCard extends ConsumerWidget {
                   ],
                   Expanded(
                     child: Text(
-                      trip.name,
+                      tripName(l, trip),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -261,7 +266,7 @@ class _TripCard extends ConsumerWidget {
                   ),
                   if (isActive)
                     Text(
-                      'Активный',
+                      l.active,
                       style: TextStyle(
                         color: AppColors.accent,
                         fontSize: 12,
@@ -296,7 +301,7 @@ class _TripCard extends ConsumerWidget {
                     const Spacer(),
                   const SizedBox(width: 12),
                   Text(
-                    target == null ? formatKg(grams) : '${formatKg(grams)} / ${formatKg(target)}',
+                    target == null ? formatWeight(context, grams) : '${formatWeight(context, grams)} / ${formatWeight(context, target)}',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
