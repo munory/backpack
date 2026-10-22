@@ -39,7 +39,7 @@ List<int> buildGearXlsx({
 
   final headers = [
     l.name, l.category, l.parentCategory, l.section, l.condition, l.quantity,
-    l.colWeightEach(smallUnit), l.colWeightTotal(smallUnit),
+    l.colWeightEach(smallUnit), l.colWeightTotal(smallUnit), l.wornColumn,
   ];
   sheet.appendRow([for (final h in headers) xl.TextCellValue(h)]);
   for (var c = 0; c < headers.length; c++) {
@@ -59,10 +59,11 @@ List<int> buildGearXlsx({
       xl.IntCellValue(item.quantity),
       weight(item.weightGrams),
       weight(item.weightGrams * item.quantity),
+      xl.TextCellValue(item.worn ? l.yes : ''),
     ]);
   }
 
-  const widths = [34.0, 20.0, 22.0, 14.0, 18.0, 10.0, 16.0, 16.0];
+  const widths = [34.0, 20.0, 22.0, 14.0, 18.0, 10.0, 16.0, 16.0, 10.0];
   for (var c = 0; c < widths.length; c++) {
     sheet.setColumnWidth(c, widths[c]);
   }

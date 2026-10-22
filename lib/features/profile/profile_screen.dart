@@ -11,6 +11,7 @@ import '../../data/providers.dart';
 import '../data_transfer/export_file.dart';
 import '../data_transfer/gear_csv.dart';
 import '../data_transfer/gear_xlsx.dart';
+import '../data_transfer/import_screen.dart';
 
 /// A summary of the whole closet up top, then plain grouped lists: data
 /// (import/export), settings, and about. Settings rows show their current
@@ -42,7 +43,11 @@ class ProfileScreen extends ConsumerWidget {
           _SummaryCard(),
           _SectionLabel(l.sectionData),
           _Group(children: [
-            _Row(label: l.importFromFile, comingSoon: true),
+            _Row(
+              label: l.importFromFile,
+              trailingIcon: Icons.chevron_right,
+              onTap: () => startImport(context),
+            ),
             // Two exports for two jobs: Excel to read and work with the
             // list (opens right in any Excel, whatever its regional
             // settings), CSV to move it into LighterPack.
@@ -321,15 +326,13 @@ class _Group extends StatelessWidget {
 }
 
 /// One list row: a label, optionally a value on the right, and a chevron
-/// when it leads somewhere. [comingSoon] rows are shown but inert, marked
-/// "скоро" — what lands here in the next steps.
+/// when it leads somewhere.
 class _Row extends StatelessWidget {
   const _Row({
     required this.label,
     this.value,
     this.onTap,
     this.color,
-    this.comingSoon = false,
     this.enabled = true,
     this.trailingIcon,
   });
@@ -338,7 +341,6 @@ class _Row extends StatelessWidget {
   final String? value;
   final VoidCallback? onTap;
   final Color? color;
-  final bool comingSoon;
 
   /// False greys the row out — e.g. export with nothing to export.
   final bool enabled;
@@ -347,9 +349,8 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final muted = AppColors.textSecondary.withValues(alpha: 0.6);
-    final active = enabled && !comingSoon;
     return InkWell(
-      onTap: active ? onTap : null,
+      onTap: enabled ? onTap : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         child: Row(
@@ -359,12 +360,10 @@ class _Row extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 15,
-                  color: active ? (color ?? AppColors.textPrimary) : muted,
+                  color: enabled ? (color ?? AppColors.textPrimary) : muted,
                 ),
               ),
             ),
-            if (comingSoon)
-              Text(context.l10n.comingSoon, style: TextStyle(fontSize: 13, color: muted)),
             if (value != null)
               Text(value!, style: TextStyle(fontSize: 15, color: AppColors.textSecondary)),
             if (trailingIcon != null) ...[

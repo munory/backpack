@@ -71,6 +71,12 @@ class Items extends Table {
   /// everywhere weight gets totaled. An alternative to duplicating the item
   /// N times for something you own several identical copies of.
   IntColumn get quantity => integer().withDefault(const Constant(1))();
+
+  /// Worn while hiking (boots, the shell you walk in) rather than carried
+  /// in the pack — left out of the pack and base weight, counted
+  /// separately. Set on the item itself: what you hike in rarely changes
+  /// trip to trip.
+  BoolColumn get worn => boolean().withDefault(const Constant(false))();
 }
 
 /// A single trip/hike — or, before the user has bothered to name one, just
@@ -143,7 +149,7 @@ class AppDatabase extends _$AppDatabase {
   final String seedLanguage;
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -195,6 +201,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 18) {
             await m.addColumn(appSettings, appSettings.weightUnit);
+          }
+          if (from < 19) {
+            await m.addColumn(items, items.worn);
           }
         },
       );
@@ -415,6 +424,7 @@ class AppDatabase extends _$AppDatabase {
     required ItemCondition condition,
     PackType? packType,
     int quantity = 1,
+    bool worn = false,
   }) {
     return into(items).insert(
       ItemsCompanion.insert(
@@ -424,6 +434,7 @@ class AppDatabase extends _$AppDatabase {
         condition: condition,
         packType: Value(packType),
         quantity: Value(quantity),
+        worn: Value(worn),
       ),
     );
   }
@@ -436,6 +447,7 @@ class AppDatabase extends _$AppDatabase {
     required ItemCondition condition,
     PackType? packType,
     int quantity = 1,
+    bool worn = false,
   }) {
     return (update(items)..where((i) => i.id.equals(id))).write(
       ItemsCompanion(
@@ -445,6 +457,7 @@ class AppDatabase extends _$AppDatabase {
         condition: Value(condition),
         packType: Value(packType),
         quantity: Value(quantity),
+        worn: Value(worn),
       ),
     );
   }
@@ -468,6 +481,7 @@ class AppDatabase extends _$AppDatabase {
         condition: item.condition,
         packType: Value(item.packType),
         quantity: Value(item.quantity),
+        worn: Value(item.worn),
       ),
     );
     return (select(items)..where((i) => i.id.equals(id))).getSingle();

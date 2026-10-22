@@ -11,7 +11,13 @@ void main() {
   test('kilograms, with a decimal comma in Russian', () {
     expect(formatWeightIn(1440, unit: WeightUnit.metric, l: en), '1.4 kg');
     expect(formatWeightIn(1500, unit: WeightUnit.metric, l: ru), '1,5 кг');
-    expect(formatWeightIn(0, unit: WeightUnit.metric, l: ru), '0,0 кг');
+    expect(formatWeightIn(1000, unit: WeightUnit.metric, l: ru), '1,0 кг');
+  });
+
+  test('under a kilo in whole grams', () {
+    expect(formatWeightIn(15, unit: WeightUnit.metric, l: ru), '15 г');
+    expect(formatWeightIn(999, unit: WeightUnit.metric, l: en), '999 g');
+    expect(formatWeightIn(0, unit: WeightUnit.metric, l: ru), '0 г');
   });
 
   test('pounds, with anything under a pound in ounces', () {

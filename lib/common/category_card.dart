@@ -425,9 +425,9 @@ class _ItemRow extends StatelessWidget {
                     conditionLabel(context.l10n, item.condition),
                     style: TextStyle(fontSize: 13, color: conditionColor),
                   ),
-                  if (packTypeLabel != null)
+                  for (final tag in [?packTypeLabel, if (item.worn) context.l10n.wornTag])
                     Text(
-                      ' · $packTypeLabel',
+                      ' · $tag',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.textSecondary.withValues(alpha: 0.55),

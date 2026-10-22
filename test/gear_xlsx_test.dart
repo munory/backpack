@@ -9,7 +9,7 @@ void main() {
   final ru = lookupAppLocalizations(const Locale('ru'));
 
   const kitchen = Category(id: 1, name: 'Кухня', packType: PackType.gear);
-  Item item(int id, String name, int grams, {int? categoryId, int quantity = 1}) => Item(
+  Item item(int id, String name, int grams, {int? categoryId, int quantity = 1}) => Item(worn: false,
         id: id,
         name: name,
         weightGrams: grams,
@@ -39,7 +39,7 @@ void main() {
     );
     expect(rows[0].map((c) => c.toString()), [
       'Название', 'Категория', 'Родительская категория', 'Раздел',
-      'Состояние', 'Количество', 'Вес за шт., г', 'Вес всего, г',
+      'Состояние', 'Количество', 'Вес за шт., г', 'Вес всего, г', 'Надето',
     ]);
     expect(rows[1][0].toString(), 'Котелок');
     expect(rows[1][5], isA<xl.IntCellValue>());

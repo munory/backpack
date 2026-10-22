@@ -14,7 +14,7 @@ void main() {
 
   Item item(int id, String name, int grams,
           {int? categoryId, int quantity = 1, ItemCondition c = ItemCondition.newItem}) =>
-      Item(
+      Item(worn: false,
         id: id,
         name: name,
         weightGrams: grams,
@@ -50,7 +50,7 @@ void main() {
   });
 
   test('imperial writes ounces; uncategorized items keep their own section', () {
-    const water = Item(
+    const water = Item(worn: false,
       id: 1,
       name: 'Bottle',
       weightGrams: 200,

@@ -47,7 +47,7 @@ String buildGearCsv({
       unit == WeightUnit.metric ? 'g' : 'oz',
       '',
       '',
-      '',
+      item.worn ? 'Worn' : '',
       section == PackType.gear ? '' : 'Consumable',
       conditionLabel(l, item.condition),
       packTypeLabel(l, section),

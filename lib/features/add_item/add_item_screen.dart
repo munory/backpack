@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../common/app_checkbox.dart';
 import '../../common/category_form_sheet.dart';
 import '../../common/input_decoration.dart';
 import '../../common/l10n.dart';
@@ -37,7 +38,8 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
   // Only used when _categoryId is null — an item without a category still
   // needs to know its own section to count toward the right total.
   PackType _itemPackType = PackType.gear;
-  bool _inOunces = false;
+  MassUnit _weightUnit = MassUnit.g;
+  bool _worn = false;
   String? _error;
 
   // The field only ever displays a *rounded* value, so re-parsing that text
@@ -59,6 +61,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
       _condition = editing.condition;
       _itemPackType = editing.packType ?? PackType.gear;
       _quantity = editing.quantity;
+      _worn = editing.worn;
     } else if (widget.initialCategoryId != null) {
       _categoryId = widget.initialCategoryId;
     }
@@ -70,15 +73,16 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
   bool _unitChosen = false;
 
-  /// The field starts in the user's unit (grams, or ounces for pounds) —
-  /// done here rather than in initState, which can't read settings that
-  /// depend on the language yet.
+  /// The field starts in the user's small unit (grams, or ounces for
+  /// pounds) — done here rather than in initState, which can't read
+  /// settings that depend on the language yet. Kilograms and pounds are in
+  /// the unit menu too, for a tent read off a kitchen scale.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_unitChosen) return;
     _unitChosen = true;
-    _inOunces = weightUnitOf(context) == WeightUnit.imperial;
+    _weightUnit = weightUnitOf(context) == WeightUnit.imperial ? MassUnit.oz : MassUnit.g;
     _showPreciseGrams();
   }
 
@@ -86,7 +90,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     if (_preciseGrams == null) return;
     _suppressWeightSync = true;
     _weightController.text = formatInputNumber(
-      _inOunces ? _preciseGrams! / gramsPerOunce : _preciseGrams!,
+      _preciseGrams! / _weightUnit.grams,
       languageCode: context.l10n.localeName,
     );
     _suppressWeightSync = false;
@@ -95,12 +99,12 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
   void _syncPreciseGramsFromText() {
     if (_suppressWeightSync) return;
     final raw = parseInputNumber(_weightController.text);
-    _preciseGrams = raw == null ? null : (_inOunces ? raw * gramsPerOunce : raw);
+    _preciseGrams = raw == null ? null : raw * _weightUnit.grams;
     setState(() {});
   }
 
-  void _onWeightUnitChanged(bool inOunces) {
-    _inOunces = inOunces;
+  void _onWeightUnitChanged(MassUnit unit) {
+    _weightUnit = unit;
     _showPreciseGrams();
     setState(() {});
   }
@@ -146,6 +150,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
         condition: _condition,
         packType: _categoryId == null ? _itemPackType : null,
         quantity: _quantity,
+        worn: _worn,
       );
     } else {
       await db.updateItem(
@@ -156,6 +161,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
         condition: _condition,
         packType: _categoryId == null ? _itemPackType : null,
         quantity: _quantity,
+        worn: _worn,
       );
     }
     if (mounted) Navigator.pop(context);
@@ -172,10 +178,9 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(isEditing ? l.editItem : l.addItem)),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      // Scrolls — with every field showing it no longer fits a small phone.
+      body: ListView(
+          padding: const EdgeInsets.all(20),
           children: [
             FieldLabel(l.itemName),
             SizedBox(
@@ -204,18 +209,18 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
                           color: AppColors.textPrimary.withValues(alpha: 0.15),
                         ),
                         const SizedBox(width: 8),
-                        PopupMenuButton<bool>(
-                          initialValue: _inOunces,
+                        PopupMenuButton<MassUnit>(
+                          initialValue: _weightUnit,
                           onSelected: _onWeightUnitChanged,
                           itemBuilder: (context) => [
-                            PopupMenuItem(value: false, child: Text(l.unitG)),
-                            PopupMenuItem(value: true, child: Text(l.unitOz)),
+                            for (final u in MassUnit.values)
+                              PopupMenuItem(value: u, child: Text(u.label(l))),
                           ],
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                _inOunces ? l.unitOz : l.unitG,
+                                _weightUnit.label(l),
                                 style: TextStyle(color: AppColors.textPrimary),
                               ),
                               const Icon(Icons.arrow_drop_down, size: 18),
@@ -309,6 +314,38 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
                 for (final c in conditionOrder) SelectOption(c, conditionLabel(l, c)),
               ],
             ),
+            const SizedBox(height: 16),
+            // Boots and a rain shell you hike in aren't in the pack — they
+            // stay out of the pack and base weight (shown on Главная as
+            // "надето на тебе" instead).
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => setState(() => _worn = !_worn),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    AppCheckbox(value: _worn, onChanged: (v) => setState(() => _worn = v)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(l.wornLabel, style: const TextStyle(fontSize: 15)),
+                          Text(
+                            l.wornHint,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary.withValues(alpha: 0.65),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
             if (_error != null) ...[
               const SizedBox(height: 8),
               Text(_error!, style: TextStyle(color: AppColors.overWeight)),
@@ -319,7 +356,6 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
               onPressed: _canSubmit ? _submit : null,
             ),
           ],
-        ),
       ),
     );
   }

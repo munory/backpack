@@ -515,8 +515,44 @@ abstract class AppLocalizations {
   /// No description provided for @baseWeightHint.
   ///
   /// In en, this message translates to:
-  /// **'Gear and pack only — no food or water'**
+  /// **'Gear and pack only — no food, water or what you wear'**
   String get baseWeightHint;
+
+  /// No description provided for @wornOnYou.
+  ///
+  /// In en, this message translates to:
+  /// **'+ {weight} worn'**
+  String wornOnYou(String weight);
+
+  /// No description provided for @wornLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Worn'**
+  String get wornLabel;
+
+  /// No description provided for @wornHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Boots, the jacket you hike in — not counted in the pack weight'**
+  String get wornHint;
+
+  /// No description provided for @wornTag.
+  ///
+  /// In en, this message translates to:
+  /// **'worn'**
+  String get wornTag;
+
+  /// No description provided for @wornColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Worn'**
+  String get wornColumn;
+
+  /// No description provided for @yes.
+  ///
+  /// In en, this message translates to:
+  /// **'yes'**
+  String get yes;
 
   /// No description provided for @removeFromTrip.
   ///
@@ -746,6 +782,132 @@ abstract class AppLocalizations {
   /// **'Export for LighterPack (CSV)'**
   String get exportLighterPack;
 
+  /// No description provided for @importTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get importTitle;
+
+  /// No description provided for @importMappingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Which column is what?'**
+  String get importMappingTitle;
+
+  /// No description provided for @importMappingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'We guessed what we could — check and fix it. Name and weight are required.'**
+  String get importMappingHint;
+
+  /// No description provided for @fieldUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Weight unit'**
+  String get fieldUnit;
+
+  /// No description provided for @fieldConsumable.
+  ///
+  /// In en, this message translates to:
+  /// **'Consumable'**
+  String get fieldConsumable;
+
+  /// No description provided for @defaultUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'When no unit is given'**
+  String get defaultUnit;
+
+  /// No description provided for @columnNone.
+  ///
+  /// In en, this message translates to:
+  /// **'— none —'**
+  String get columnNone;
+
+  /// No description provided for @columnN.
+  ///
+  /// In en, this message translates to:
+  /// **'Column {n}'**
+  String columnN(int n);
+
+  /// No description provided for @importExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Example'**
+  String get importExample;
+
+  /// No description provided for @next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get next;
+
+  /// No description provided for @newCategoryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 new category} other{{count} new categories}}'**
+  String newCategoryCount(int count);
+
+  /// No description provided for @skippedRows.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 row skipped} other{{count} rows skipped}} — no name or weight'**
+  String skippedRows(int count);
+
+  /// No description provided for @duplicatesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item is already in your inventory} other{{count} items are already in your inventory}}'**
+  String duplicatesFound(int count);
+
+  /// No description provided for @duplicatesSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip them'**
+  String get duplicatesSkip;
+
+  /// No description provided for @duplicatesAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add copies'**
+  String get duplicatesAdd;
+
+  /// No description provided for @alreadyHave.
+  ///
+  /// In en, this message translates to:
+  /// **'already there'**
+  String get alreadyHave;
+
+  /// No description provided for @importButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Import ({items})'**
+  String importButton(String items);
+
+  /// No description provided for @nothingToImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to import'**
+  String get nothingToImport;
+
+  /// No description provided for @adjustColumns.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust columns'**
+  String get adjustColumns;
+
+  /// No description provided for @importDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Added: {items}'**
+  String importDone(String items);
+
+  /// No description provided for @importReadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read the file. Use .csv or .xlsx — an old .xls can be saved as .xlsx in Excel.'**
+  String get importReadError;
+
   /// No description provided for @saveToPhone.
   ///
   /// In en, this message translates to:
@@ -775,12 +937,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total weight, {unit}'**
   String colWeightTotal(String unit);
-
-  /// No description provided for @comingSoon.
-  ///
-  /// In en, this message translates to:
-  /// **'soon'**
-  String get comingSoon;
 
   /// No description provided for @sectionSettings.
   ///

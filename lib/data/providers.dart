@@ -86,7 +86,8 @@ final activeTripRowsProvider = StreamProvider<Map<int, TripItem>>((ref) {
 });
 
 /// Per-trip weight and item count for the trips list, from one join over
-/// every trip's list.
+/// every trip's list. The weight is the pack's — worn items count as items
+/// but not toward the weight compared with the trip's target.
 typedef TripSummary = ({int grams, int itemCount});
 
 final tripSummariesProvider = StreamProvider<Map<int, TripSummary>>((ref) {
@@ -100,7 +101,8 @@ final tripSummariesProvider = StreamProvider<Map<int, TripSummary>>((ref) {
     for (final r in rows) {
       final row = r.readTable(db.tripItems);
       final item = r.readTable(db.items);
-      grams[row.tripId] = (grams[row.tripId] ?? 0) + item.weightGrams * tripQuantity(row, item);
+      grams[row.tripId] = (grams[row.tripId] ?? 0) +
+          (item.worn ? 0 : item.weightGrams * tripQuantity(row, item));
       counts[row.tripId] = (counts[row.tripId] ?? 0) + 1;
     }
     return {
@@ -188,16 +190,26 @@ List<CategoryGroup> _rootCategoryTotals(List<Category> categories, List<Item> it
 
 // --- Active-trip-scoped (Dashboard) ---
 
-/// Total weight of every item in the active trip, in grams.
+/// The pack's weight for the active trip, in grams — everything on the
+/// list except what's worn, which isn't in the pack at all (see
+/// [wornWeightProvider]). This is what a trip's target is measured against.
 final totalWeightProvider = Provider<int>((ref) {
-  return _totalWeight(ref.watch(activeTripItemsProvider).value ?? <Item>[]);
+  final items = ref.watch(activeTripItemsProvider).value ?? <Item>[];
+  return _totalWeight(items.where((i) => !i.worn).toList());
 });
 
-/// Weight in grams grouped by Food / Gear / Water, for the active trip.
+/// What's worn on the active trip (boots, the shell you hike in), in grams.
+final wornWeightProvider = Provider<int>((ref) {
+  final items = ref.watch(activeTripItemsProvider).value ?? <Item>[];
+  return _totalWeight(items.where((i) => i.worn).toList());
+});
+
+/// The pack's weight grouped by Food / Gear / Water, for the active trip —
+/// worn items left out, so the three add up to [totalWeightProvider].
 final weightByPackTypeProvider = Provider<Map<PackType, int>>((ref) {
   final items = ref.watch(activeTripItemsProvider).value ?? <Item>[];
   final categories = ref.watch(categoriesProvider).value ?? <Category>[];
-  return _weightByPackType(items, categories);
+  return _weightByPackType(items.where((i) => !i.worn).toList(), categories);
 });
 
 /// Root categories with the combined weight of every item — belonging to

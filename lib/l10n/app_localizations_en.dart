@@ -245,7 +245,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get changeTarget => 'Change target weight';
 
   @override
-  String get baseWeightHint => 'Gear and pack only — no food or water';
+  String get baseWeightHint =>
+      'Gear and pack only — no food, water or what you wear';
+
+  @override
+  String wornOnYou(String weight) {
+    return '+ $weight worn';
+  }
+
+  @override
+  String get wornLabel => 'Worn';
+
+  @override
+  String get wornHint =>
+      'Boots, the jacket you hike in — not counted in the pack weight';
+
+  @override
+  String get wornTag => 'worn';
+
+  @override
+  String get wornColumn => 'Worn';
+
+  @override
+  String get yes => 'yes';
 
   @override
   String get removeFromTrip => 'Remove from trip';
@@ -391,6 +413,101 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportLighterPack => 'Export for LighterPack (CSV)';
 
   @override
+  String get importTitle => 'Import';
+
+  @override
+  String get importMappingTitle => 'Which column is what?';
+
+  @override
+  String get importMappingHint =>
+      'We guessed what we could — check and fix it. Name and weight are required.';
+
+  @override
+  String get fieldUnit => 'Weight unit';
+
+  @override
+  String get fieldConsumable => 'Consumable';
+
+  @override
+  String get defaultUnit => 'When no unit is given';
+
+  @override
+  String get columnNone => '— none —';
+
+  @override
+  String columnN(int n) {
+    return 'Column $n';
+  }
+
+  @override
+  String get importExample => 'Example';
+
+  @override
+  String get next => 'Next';
+
+  @override
+  String newCategoryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new categories',
+      one: '1 new category',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String skippedRows(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rows skipped',
+      one: '1 row skipped',
+    );
+    return '$_temp0 — no name or weight';
+  }
+
+  @override
+  String duplicatesFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items are already in your inventory',
+      one: '1 item is already in your inventory',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get duplicatesSkip => 'Skip them';
+
+  @override
+  String get duplicatesAdd => 'Add copies';
+
+  @override
+  String get alreadyHave => 'already there';
+
+  @override
+  String importButton(String items) {
+    return 'Import ($items)';
+  }
+
+  @override
+  String get nothingToImport => 'Nothing to import';
+
+  @override
+  String get adjustColumns => 'Adjust columns';
+
+  @override
+  String importDone(String items) {
+    return 'Added: $items';
+  }
+
+  @override
+  String get importReadError =>
+      'Couldn\'t read the file. Use .csv or .xlsx — an old .xls can be saved as .xlsx in Excel.';
+
+  @override
   String get saveToPhone => 'Save to phone';
 
   @override
@@ -408,9 +525,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String colWeightTotal(String unit) {
     return 'Total weight, $unit';
   }
-
-  @override
-  String get comingSoon => 'soon';
 
   @override
   String get sectionSettings => 'Settings';

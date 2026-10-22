@@ -247,7 +247,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get changeTarget => 'Изменить целевой вес';
 
   @override
-  String get baseWeightHint => 'Только снаряжение и рюкзак — без еды и воды';
+  String get baseWeightHint =>
+      'Только снаряжение и рюкзак — без еды, воды и того, что надето';
+
+  @override
+  String wornOnYou(String weight) {
+    return '+ $weight надето на тебе';
+  }
+
+  @override
+  String get wornLabel => 'Надето на мне';
+
+  @override
+  String get wornHint =>
+      'Обувь, куртка, в которой идёшь, — не входит в вес рюкзака';
+
+  @override
+  String get wornTag => 'надето';
+
+  @override
+  String get wornColumn => 'Надето';
+
+  @override
+  String get yes => 'да';
 
   @override
   String get removeFromTrip => 'Убрать из похода';
@@ -396,6 +418,104 @@ class AppLocalizationsRu extends AppLocalizations {
   String get exportLighterPack => 'Экспорт для LighterPack (CSV)';
 
   @override
+  String get importTitle => 'Импорт';
+
+  @override
+  String get importMappingTitle => 'Что в какой колонке?';
+
+  @override
+  String get importMappingHint =>
+      'Мы угадали, что смогли, — проверь и поправь. Обязательны название и вес.';
+
+  @override
+  String get fieldUnit => 'Единица веса';
+
+  @override
+  String get fieldConsumable => 'Расходник';
+
+  @override
+  String get defaultUnit => 'Если единица не указана';
+
+  @override
+  String get columnNone => '— нет —';
+
+  @override
+  String columnN(int n) {
+    return 'Колонка $n';
+  }
+
+  @override
+  String get importExample => 'Пример';
+
+  @override
+  String get next => 'Дальше';
+
+  @override
+  String newCategoryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count новых категорий',
+      few: '$count новые категории',
+      one: '$count новая категория',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String skippedRows(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count строк пропущено',
+      few: '$count строки пропущены',
+      one: '$count строка пропущена',
+    );
+    return '$_temp0 — нет названия или веса';
+  }
+
+  @override
+  String duplicatesFound(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count вещей уже есть в инвентаре',
+      few: '$count вещи уже есть в инвентаре',
+      one: '$count вещь уже есть в инвентаре',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get duplicatesSkip => 'Пропустить их';
+
+  @override
+  String get duplicatesAdd => 'Добавить копии';
+
+  @override
+  String get alreadyHave => 'уже есть';
+
+  @override
+  String importButton(String items) {
+    return 'Импортировать ($items)';
+  }
+
+  @override
+  String get nothingToImport => 'Нечего импортировать';
+
+  @override
+  String get adjustColumns => 'Настроить колонки';
+
+  @override
+  String importDone(String items) {
+    return 'Добавлено: $items';
+  }
+
+  @override
+  String get importReadError =>
+      'Не получилось прочитать файл. Подойдут .csv и .xlsx — старый .xls можно пересохранить в Excel как .xlsx.';
+
+  @override
   String get saveToPhone => 'Сохранить на телефон';
 
   @override
@@ -413,9 +533,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String colWeightTotal(String unit) {
     return 'Вес всего, $unit';
   }
-
-  @override
-  String get comingSoon => 'скоро';
 
   @override
   String get sectionSettings => 'Настройки';

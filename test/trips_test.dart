@@ -3,6 +3,7 @@ import 'package:backpack/data/database.dart';
 import 'package:backpack/data/providers.dart';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -93,8 +94,38 @@ void main() {
     expect(names[second], 'Эльбрус (копия 2)');
   });
 
+  test('worn items stay out of the pack weight and are counted on their own', () async {
+    final pack = await addGear('Рюкзак');
+    final boots = await db.addItem(
+      name: 'Ботинки',
+      weightGrams: 900,
+      condition: ItemCondition.newItem,
+      packType: PackType.gear,
+      worn: true,
+    );
+    await db.setItemPacked(pack, true);
+    await db.setItemPacked(boots, true);
+
+    final container = ProviderContainer(overrides: [databaseProvider.overrideWithValue(db)]);
+    addTearDown(container.dispose);
+    // Riverpod pauses providers nobody listens to — listen, then wait until
+    // the active trip's list has actually loaded.
+    container.listen(activeTripItemsProvider, (_, _) {});
+    container.listen(tripSummariesProvider, (_, _) {});
+    while ((container.read(activeTripItemsProvider).value ?? const []).length < 2) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+
+    expect(container.read(totalWeightProvider), 100);
+    expect(container.read(wornWeightProvider), 900);
+    expect(container.read(weightByPackTypeProvider)[PackType.gear], 100);
+    final summary = (await container.read(tripSummariesProvider.future)).values.single;
+    expect(summary.grams, 100);
+    expect(summary.itemCount, 2);
+  });
+
   test('trip quantity defaults to all owned and never exceeds what is owned', () {
-    const item = Item(
+    const item = Item(worn: false,
       id: 1,
       name: 'Газ',
       weightGrams: 100,

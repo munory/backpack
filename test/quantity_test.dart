@@ -2,7 +2,7 @@ import 'package:backpack/data/database.dart';
 import 'package:backpack/data/providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Item _item({int weightGrams = 100, int quantity = 1}) => Item(
+Item _item({int weightGrams = 100, int quantity = 1}) => Item(worn: false,
       id: 1,
       name: 'Test',
       weightGrams: weightGrams,

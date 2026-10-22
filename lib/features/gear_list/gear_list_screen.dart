@@ -583,9 +583,9 @@ class _FilteredItemRow extends StatelessWidget {
                           conditionLabel(context.l10n, item.condition),
                           style: TextStyle(fontSize: 13, color: conditionColor),
                         ),
-                        if (categoryName != null)
+                        for (final tag in [?categoryName, if (item.worn) context.l10n.wornTag])
                           Text(
-                            ' · $categoryName',
+                            ' · $tag',
                             style: TextStyle(
                               color: AppColors.textSecondary.withValues(alpha: 0.6),
                               fontSize: 13,

@@ -8,7 +8,7 @@ Item _item({
   ItemCondition condition = ItemCondition.newItem,
   PackType? packType,
 }) =>
-    Item(
+    Item(worn: false,
       id: 1,
       name: name,
       weightGrams: 100,

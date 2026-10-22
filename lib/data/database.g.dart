@@ -495,6 +495,19 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _wornMeta = const VerificationMeta('worn');
+  @override
+  late final GeneratedColumn<bool> worn = GeneratedColumn<bool>(
+    'worn',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("worn" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -504,6 +517,7 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
     condition,
     packType,
     quantity,
+    worn,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -551,6 +565,12 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
         quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
       );
     }
+    if (data.containsKey('worn')) {
+      context.handle(
+        _wornMeta,
+        worn.isAcceptableOrUnknown(data['worn']!, _wornMeta),
+      );
+    }
     return context;
   }
 
@@ -592,6 +612,10 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
         DriftSqlType.int,
         data['${effectivePrefix}quantity'],
       )!,
+      worn: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}worn'],
+      )!,
     );
   }
 
@@ -629,6 +653,12 @@ class Item extends DataClass implements Insertable<Item> {
   /// everywhere weight gets totaled. An alternative to duplicating the item
   /// N times for something you own several identical copies of.
   final int quantity;
+
+  /// Worn while hiking (boots, the shell you walk in) rather than carried
+  /// in the pack — left out of the pack and base weight, counted
+  /// separately. Set on the item itself: what you hike in rarely changes
+  /// trip to trip.
+  final bool worn;
   const Item({
     required this.id,
     required this.name,
@@ -637,6 +667,7 @@ class Item extends DataClass implements Insertable<Item> {
     required this.condition,
     this.packType,
     required this.quantity,
+    required this.worn,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -658,6 +689,7 @@ class Item extends DataClass implements Insertable<Item> {
       );
     }
     map['quantity'] = Variable<int>(quantity);
+    map['worn'] = Variable<bool>(worn);
     return map;
   }
 
@@ -674,6 +706,7 @@ class Item extends DataClass implements Insertable<Item> {
           ? const Value.absent()
           : Value(packType),
       quantity: Value(quantity),
+      worn: Value(worn),
     );
   }
 
@@ -694,6 +727,7 @@ class Item extends DataClass implements Insertable<Item> {
         serializer.fromJson<int?>(json['packType']),
       ),
       quantity: serializer.fromJson<int>(json['quantity']),
+      worn: serializer.fromJson<bool>(json['worn']),
     );
   }
   @override
@@ -711,6 +745,7 @@ class Item extends DataClass implements Insertable<Item> {
         $ItemsTable.$converterpackTypen.toJson(packType),
       ),
       'quantity': serializer.toJson<int>(quantity),
+      'worn': serializer.toJson<bool>(worn),
     };
   }
 
@@ -722,6 +757,7 @@ class Item extends DataClass implements Insertable<Item> {
     ItemCondition? condition,
     Value<PackType?> packType = const Value.absent(),
     int? quantity,
+    bool? worn,
   }) => Item(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -730,6 +766,7 @@ class Item extends DataClass implements Insertable<Item> {
     condition: condition ?? this.condition,
     packType: packType.present ? packType.value : this.packType,
     quantity: quantity ?? this.quantity,
+    worn: worn ?? this.worn,
   );
   Item copyWithCompanion(ItemsCompanion data) {
     return Item(
@@ -744,6 +781,7 @@ class Item extends DataClass implements Insertable<Item> {
       condition: data.condition.present ? data.condition.value : this.condition,
       packType: data.packType.present ? data.packType.value : this.packType,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      worn: data.worn.present ? data.worn.value : this.worn,
     );
   }
 
@@ -756,7 +794,8 @@ class Item extends DataClass implements Insertable<Item> {
           ..write('categoryId: $categoryId, ')
           ..write('condition: $condition, ')
           ..write('packType: $packType, ')
-          ..write('quantity: $quantity')
+          ..write('quantity: $quantity, ')
+          ..write('worn: $worn')
           ..write(')'))
         .toString();
   }
@@ -770,6 +809,7 @@ class Item extends DataClass implements Insertable<Item> {
     condition,
     packType,
     quantity,
+    worn,
   );
   @override
   bool operator ==(Object other) =>
@@ -781,7 +821,8 @@ class Item extends DataClass implements Insertable<Item> {
           other.categoryId == this.categoryId &&
           other.condition == this.condition &&
           other.packType == this.packType &&
-          other.quantity == this.quantity);
+          other.quantity == this.quantity &&
+          other.worn == this.worn);
 }
 
 class ItemsCompanion extends UpdateCompanion<Item> {
@@ -792,6 +833,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
   final Value<ItemCondition> condition;
   final Value<PackType?> packType;
   final Value<int> quantity;
+  final Value<bool> worn;
   const ItemsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -800,6 +842,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     this.condition = const Value.absent(),
     this.packType = const Value.absent(),
     this.quantity = const Value.absent(),
+    this.worn = const Value.absent(),
   });
   ItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -809,6 +852,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     required ItemCondition condition,
     this.packType = const Value.absent(),
     this.quantity = const Value.absent(),
+    this.worn = const Value.absent(),
   }) : name = Value(name),
        weightGrams = Value(weightGrams),
        condition = Value(condition);
@@ -820,6 +864,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     Expression<int>? condition,
     Expression<int>? packType,
     Expression<int>? quantity,
+    Expression<bool>? worn,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -829,6 +874,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
       if (condition != null) 'condition': condition,
       if (packType != null) 'pack_type': packType,
       if (quantity != null) 'quantity': quantity,
+      if (worn != null) 'worn': worn,
     });
   }
 
@@ -840,6 +886,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     Value<ItemCondition>? condition,
     Value<PackType?>? packType,
     Value<int>? quantity,
+    Value<bool>? worn,
   }) {
     return ItemsCompanion(
       id: id ?? this.id,
@@ -849,6 +896,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
       condition: condition ?? this.condition,
       packType: packType ?? this.packType,
       quantity: quantity ?? this.quantity,
+      worn: worn ?? this.worn,
     );
   }
 
@@ -880,6 +928,9 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     if (quantity.present) {
       map['quantity'] = Variable<int>(quantity.value);
     }
+    if (worn.present) {
+      map['worn'] = Variable<bool>(worn.value);
+    }
     return map;
   }
 
@@ -892,7 +943,8 @@ class ItemsCompanion extends UpdateCompanion<Item> {
           ..write('categoryId: $categoryId, ')
           ..write('condition: $condition, ')
           ..write('packType: $packType, ')
-          ..write('quantity: $quantity')
+          ..write('quantity: $quantity, ')
+          ..write('worn: $worn')
           ..write(')'))
         .toString();
   }
@@ -2512,6 +2564,7 @@ typedef $$ItemsTableCreateCompanionBuilder =
       required ItemCondition condition,
       Value<PackType?> packType,
       Value<int> quantity,
+      Value<bool> worn,
     });
 typedef $$ItemsTableUpdateCompanionBuilder =
     ItemsCompanion Function({
@@ -2522,6 +2575,7 @@ typedef $$ItemsTableUpdateCompanionBuilder =
       Value<ItemCondition> condition,
       Value<PackType?> packType,
       Value<int> quantity,
+      Value<bool> worn,
     });
 
 final class $$ItemsTableReferences
@@ -2601,6 +2655,11 @@ class $$ItemsTableFilterComposer extends Composer<_$AppDatabase, $ItemsTable> {
 
   ColumnFilters<int> get quantity => $composableBuilder(
     column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get worn => $composableBuilder(
+    column: $table.worn,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2692,6 +2751,11 @@ class $$ItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get worn => $composableBuilder(
+    column: $table.worn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategoriesTableOrderingComposer get categoryId {
     final $$CategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -2744,6 +2808,9 @@ class $$ItemsTableAnnotationComposer
 
   GeneratedColumn<int> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<bool> get worn =>
+      $composableBuilder(column: $table.worn, builder: (column) => column);
 
   $$CategoriesTableAnnotationComposer get categoryId {
     final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
@@ -2829,6 +2896,7 @@ class $$ItemsTableTableManager
                 Value<ItemCondition> condition = const Value.absent(),
                 Value<PackType?> packType = const Value.absent(),
                 Value<int> quantity = const Value.absent(),
+                Value<bool> worn = const Value.absent(),
               }) => ItemsCompanion(
                 id: id,
                 name: name,
@@ -2837,6 +2905,7 @@ class $$ItemsTableTableManager
                 condition: condition,
                 packType: packType,
                 quantity: quantity,
+                worn: worn,
               ),
           createCompanionCallback:
               ({
@@ -2847,6 +2916,7 @@ class $$ItemsTableTableManager
                 required ItemCondition condition,
                 Value<PackType?> packType = const Value.absent(),
                 Value<int> quantity = const Value.absent(),
+                Value<bool> worn = const Value.absent(),
               }) => ItemsCompanion.insert(
                 id: id,
                 name: name,
@@ -2855,6 +2925,7 @@ class $$ItemsTableTableManager
                 condition: condition,
                 packType: packType,
                 quantity: quantity,
+                worn: worn,
               ),
           withReferenceMapper: (p0) => p0
               .map(

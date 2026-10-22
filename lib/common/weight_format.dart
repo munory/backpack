@@ -6,6 +6,25 @@ import 'l10n.dart';
 const gramsPerOunce = 28.349523125;
 const gramsPerPound = 453.59237;
 
+/// Units a weight can be typed or imported in, with how many grams one of
+/// each is.
+enum MassUnit {
+  g(1),
+  kg(1000),
+  oz(gramsPerOunce),
+  lb(gramsPerPound);
+
+  const MassUnit(this.grams);
+  final double grams;
+
+  String label(AppLocalizations l) => switch (this) {
+        MassUnit.g => l.unitG,
+        MassUnit.kg => l.unitKg,
+        MassUnit.oz => l.unitOz,
+        MassUnit.lb => l.unitLb,
+      };
+}
+
 /// The user's explicit choice from Профиль, or null to let the language
 /// decide (see [defaultWeightUnit]). A [ValueNotifier] like `appThemeMode`,
 /// so [BackpackApp] rebuilds everything on change.
@@ -19,15 +38,20 @@ WeightUnit defaultWeightUnit(String languageCode) =>
 WeightUnit weightUnitOf(BuildContext context) =>
     appWeightUnit.value ?? defaultWeightUnit(context.l10n.localeName);
 
-/// A weight for display in the current unit and language — "1.5 kg" /
-/// "1,5 кг", or in pounds "13.2 lb" with anything under a pound in ounces
-/// ("7.1 oz"), the way imperial gear lists are written.
+/// A weight for display in the current unit and language. Light things in
+/// the small unit, heavier ones in the big one, the way gear lists are
+/// written: "340 г" but "1,4 кг"; "7.1 oz" but "13.2 lb".
 String formatWeight(BuildContext context, int grams) =>
     formatWeightIn(grams, unit: weightUnitOf(context), l: context.l10n);
 
 String formatWeightIn(int grams, {required WeightUnit unit, required AppLocalizations l}) {
   String n(double v) => formatDecimal(v, l.localeName);
-  if (unit == WeightUnit.metric) return '${n(grams / 1000)} ${l.unitKg}';
+  if (unit == WeightUnit.metric) {
+    // Under a kilo in whole grams — "0,0 кг" for a 15 g lighter told
+    // nothing.
+    if (grams < 1000) return '$grams ${l.unitG}';
+    return '${n(grams / 1000)} ${l.unitKg}';
+  }
   final ounces = grams / gramsPerOunce;
   // Compared after rounding, so 15.98 oz reads "1.0 lb", not "16.0 oz".
   if ((ounces * 10).round() < 160) return '${n(ounces)} ${l.unitOz}';

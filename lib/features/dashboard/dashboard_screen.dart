@@ -119,6 +119,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final trip = ref.watch(activeTripProvider).value;
     final totalGrams = ref.watch(totalWeightProvider);
+    final wornGrams = ref.watch(wornWeightProvider);
     final byType = ref.watch(weightByPackTypeProvider);
     // Categories are shared master data — unlike the Gear list (whole
     // closet), an empty category here just means nothing from it is packed
@@ -197,6 +198,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       style: weightDisplayStyle(isOverweight: isOverweight),
                     ),
                   ),
+                  if (wornGrams > 0)
+                    Center(
+                      child: Text(
+                        l.wornOnYou(formatWeight(context, wornGrams)),
+                        style: TextStyle(
+                          color: AppColors.textSecondary.withValues(alpha: 0.65),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
                   Center(
                     child: InkWell(
                       onTap: () => _showSetTargetDialog(context, ref, trip),
