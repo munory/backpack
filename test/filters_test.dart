@@ -8,7 +8,7 @@ Item _item({
   ItemCondition condition = ItemCondition.newItem,
   PackType? packType,
 }) =>
-    Item(worn: false,
+    Item(uuid: '', updatedAt: 0, worn: false,
       id: 1,
       name: name,
       weightGrams: 100,
@@ -19,6 +19,8 @@ Item _item({
     );
 
 Category _category({required int id, required PackType packType}) => Category(
+      uuid: '',
+      updatedAt: 0,
       id: id,
       name: 'Cat $id',
       packType: packType,

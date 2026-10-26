@@ -8,8 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final ru = lookupAppLocalizations(const Locale('ru'));
 
-  const kitchen = Category(id: 1, name: 'Кухня', packType: PackType.gear);
-  Item item(int id, String name, int grams, {int? categoryId, int quantity = 1}) => Item(worn: false,
+  const kitchen = Category(uuid: '', updatedAt: 0, id: 1, name: 'Кухня', packType: PackType.gear);
+  Item item(int id, String name, int grams, {int? categoryId, int quantity = 1}) => Item(uuid: '', updatedAt: 0, worn: false,
         id: id,
         name: name,
         weightGrams: grams,

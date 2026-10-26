@@ -125,7 +125,7 @@ void main() {
   });
 
   test('trip quantity defaults to all owned and never exceeds what is owned', () {
-    const item = Item(worn: false,
+    const item = Item(uuid: '', updatedAt: 0, worn: false,
       id: 1,
       name: 'Газ',
       weightGrams: 100,
@@ -133,7 +133,7 @@ void main() {
       quantity: 3,
     );
     TripItem row(int? quantity) =>
-        TripItem(tripId: 1, itemId: 1, quantity: quantity, inBag: false);
+        TripItem(updatedAt: 0, tripId: 1, itemId: 1, quantity: quantity, inBag: false);
 
     expect(tripQuantity(row(null), item), 3);
     expect(tripQuantity(row(2), item), 2);

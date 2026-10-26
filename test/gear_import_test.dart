@@ -86,15 +86,15 @@ void main() {
   });
 
   group('our own exports come back unchanged', () {
-    const sleep = Category(id: 1, name: 'Спальная система', packType: PackType.gear);
-    const pads = Category(id: 2, name: 'Коврики', packType: PackType.gear, parentId: 1);
-    const food = Category(id: 3, name: 'Еда', packType: PackType.food);
+    const sleep = Category(uuid: '', updatedAt: 0, id: 1, name: 'Спальная система', packType: PackType.gear);
+    const pads = Category(uuid: '', updatedAt: 0, id: 2, name: 'Коврики', packType: PackType.gear, parentId: 1);
+    const food = Category(uuid: '', updatedAt: 0, id: 3, name: 'Еда', packType: PackType.food);
     const original = [
-      Item(worn: false, id: 1, name: 'Коврик, NeoAir', weightGrams: 340, categoryId: 2,
+      Item(uuid: '', updatedAt: 0, worn: false, id: 1, name: 'Коврик, NeoAir', weightGrams: 340, categoryId: 2,
           condition: ItemCondition.wornOut, quantity: 1),
-      Item(worn: false, id: 2, name: 'Батончик', weightGrams: 50, categoryId: 3,
+      Item(uuid: '', updatedAt: 0, worn: false, id: 2, name: 'Батончик', weightGrams: 50, categoryId: 3,
           condition: ItemCondition.newItem, quantity: 4),
-      Item(worn: false, id: 3, name: 'Фляга', weightGrams: 120, condition: ItemCondition.needsReplacement,
+      Item(uuid: '', updatedAt: 0, worn: false, id: 3, name: 'Фляга', weightGrams: 120, condition: ItemCondition.needsReplacement,
           quantity: 2, packType: PackType.water),
     ];
 
@@ -142,7 +142,7 @@ void main() {
   });
 
   test('worn items survive the round trip, and LighterPack\'s "Worn" is understood', () {
-    const boots = Item(worn: true, id: 1, name: 'Boots', weightGrams: 900,
+    const boots = Item(uuid: '', updatedAt: 0, worn: true, id: 1, name: 'Boots', weightGrams: 900,
         condition: ItemCondition.newItem, quantity: 1, packType: PackType.gear);
     final csv = buildGearCsv(items: const [boots], categories: const [],
         unit: WeightUnit.metric, l: ru);
@@ -163,9 +163,9 @@ void main() {
   });
 
   test('a duplicate is the same name in the same category, ignoring case', () {
-    const kitchen = Category(id: 1, name: 'Кухня', packType: PackType.gear);
+    const kitchen = Category(uuid: '', updatedAt: 0, id: 1, name: 'Кухня', packType: PackType.gear);
     const existing = [
-      Item(worn: false, id: 1, name: 'Горелка', weightGrams: 80, categoryId: 1,
+      Item(uuid: '', updatedAt: 0, worn: false, id: 1, name: 'Горелка', weightGrams: 80, categoryId: 1,
           condition: ItemCondition.newItem, quantity: 1),
     ];
     final dupes = findDuplicates(

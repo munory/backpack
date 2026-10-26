@@ -8,13 +8,13 @@ void main() {
   final ru = lookupAppLocalizations(const Locale('ru'));
   final en = lookupAppLocalizations(const Locale('en'));
 
-  const sleep = Category(id: 1, name: 'Спальная система', packType: PackType.gear);
-  const pads = Category(id: 2, name: 'Коврики', packType: PackType.gear, parentId: 1);
-  const food = Category(id: 3, name: 'Еда', packType: PackType.food);
+  const sleep = Category(uuid: '', updatedAt: 0, id: 1, name: 'Спальная система', packType: PackType.gear);
+  const pads = Category(uuid: '', updatedAt: 0, id: 2, name: 'Коврики', packType: PackType.gear, parentId: 1);
+  const food = Category(uuid: '', updatedAt: 0, id: 3, name: 'Еда', packType: PackType.food);
 
   Item item(int id, String name, int grams,
           {int? categoryId, int quantity = 1, ItemCondition c = ItemCondition.newItem}) =>
-      Item(worn: false,
+      Item(uuid: '', updatedAt: 0, worn: false,
         id: id,
         name: name,
         weightGrams: grams,
@@ -50,7 +50,7 @@ void main() {
   });
 
   test('imperial writes ounces; uncategorized items keep their own section', () {
-    const water = Item(worn: false,
+    const water = Item(uuid: '', updatedAt: 0, worn: false,
       id: 1,
       name: 'Bottle',
       weightGrams: 200,

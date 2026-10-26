@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 import '../l10n/app_localizations.dart';
 
@@ -27,9 +28,25 @@ enum AppLanguage { system, ru, en }
 /// How weights are shown and typed in — always stored in grams regardless.
 enum WeightUnit { metric, imperial }
 
+/// Now, as stored in every `updatedAt` — milliseconds since the epoch, so
+/// two edits a moment apart on different devices still order correctly.
+int nowMs() => DateTime.now().millisecondsSinceEpoch;
+
+const _uuid = Uuid();
+
+/// What every synced row carries. [uuid] is the row's identity across
+/// devices — the local `id` differs from phone to phone. [updatedAt] is
+/// bumped by a database trigger on any change that doesn't set it itself
+/// (see [_createSyncSchema]), so no call site can forget; the newer edit
+/// wins when two devices disagree.
+mixin Synced on Table {
+  TextColumn get uuid => text().clientDefault(() => _uuid.v4())();
+  IntColumn get updatedAt => integer().clientDefault(nowMs)();
+}
+
 /// The master, trip-independent organizational tree (e.g. Sleep System >
 /// Base layers). Shared across every trip.
-class Categories extends Table {
+class Categories extends Table with Synced {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   IntColumn get parentId =>
@@ -50,7 +67,7 @@ class Categories extends Table {
 
 /// The master gear closet — every item the user owns, regardless of which
 /// trip(s) it has been packed for.
-class Items extends Table {
+class Items extends Table with Synced {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   IntColumn get weightGrams => integer()();
@@ -82,7 +99,7 @@ class Items extends Table {
 /// A single trip/hike — or, before the user has bothered to name one, just
 /// "the pack currently being put together". Target weight is optional and
 /// set explicitly by the user whenever they choose to — never defaulted.
-class Trips extends Table {
+class Trips extends Table with Synced {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   IntColumn get targetWeightGrams => integer().nullable()();
@@ -113,8 +130,27 @@ class TripItems extends Table {
   /// on the trip's list at all (planning vs. the night-before packing run).
   BoolColumn get inBag => boolean().withDefault(const Constant(false))();
 
+  /// No uuid of its own: across devices a row is identified by its trip's
+  /// and item's uuids together — two phones adding the same item to the
+  /// same trip are one row, not two.
+  IntColumn get updatedAt => integer().clientDefault(nowMs)();
+
   @override
   Set<Column> get primaryKey => {tripId, itemId};
+}
+
+/// Synced rows deleted on this device, waiting to be deleted in the cloud
+/// too — so another device's copy doesn't bring them back. Filled by
+/// database triggers (see [_createSyncSchema]), never by app code.
+class SyncDeletions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// The table the row was in: categories, items, trips or trip_items.
+  TextColumn get entity => text()();
+
+  /// The row's uuid — for trip_items, "tripUuid/itemUuid".
+  TextColumn get entityKey => text()();
+  IntColumn get deletedAt => integer()();
 }
 
 /// Single-row table holding app-wide state: which trip is the active one
@@ -136,7 +172,7 @@ class AppSettings extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Categories, Items, Trips, TripItems, AppSettings])
+@DriftDatabase(tables: [Categories, Items, Trips, TripItems, AppSettings, SyncDeletions])
 class AppDatabase extends _$AppDatabase {
   /// [seedLanguage] names the starter categories on a brand-new install —
   /// the phone's language, since nobody has picked one in the app yet.
@@ -149,12 +185,13 @@ class AppDatabase extends _$AppDatabase {
   final String seedLanguage;
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
+          await _createSyncSchema();
           await into(appSettings).insert(const AppSettingsCompanion());
           await _seedDefaultCategories();
         },
@@ -168,6 +205,7 @@ class AppDatabase extends _$AppDatabase {
               await m.deleteTable(table.actualTableName);
             }
             await m.createAll();
+            await _createSyncSchema();
             await into(appSettings).insert(const AppSettingsCompanion());
             await _seedDefaultCategories();
             return;
@@ -205,8 +243,81 @@ class AppDatabase extends _$AppDatabase {
           if (from < 19) {
             await m.addColumn(items, items.worn);
           }
+          if (from < 20) {
+            // SQLite can't add a NOT NULL column without a constant default,
+            // so the columns go in with a placeholder that every existing
+            // row then gets replaced: its own uuid, and "changed now".
+            for (final table in const ['categories', 'items', 'trips']) {
+              await customStatement(
+                  "ALTER TABLE $table ADD COLUMN uuid TEXT NOT NULL DEFAULT ''");
+              await customStatement(
+                  'ALTER TABLE $table ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0');
+              final rows = await customSelect('SELECT id FROM $table').get();
+              for (final row in rows) {
+                await customUpdate(
+                  'UPDATE $table SET uuid = ?, updated_at = ? WHERE id = ?',
+                  variables: [
+                    Variable(_uuid.v4()),
+                    Variable(nowMs()),
+                    Variable(row.read<int>('id')),
+                  ],
+                );
+              }
+            }
+            await customStatement(
+                'ALTER TABLE trip_items ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0');
+            await customStatement('UPDATE trip_items SET updated_at = ${nowMs()}');
+            await m.createTable(syncDeletions);
+            await _createSyncSchema();
+          }
         },
       );
+
+  /// The database's own half of sync bookkeeping, kept out of app code so
+  /// no write can forget it:
+  /// - every uuid is unique;
+  /// - any update that doesn't set `updated_at` itself gets it bumped to
+  ///   now (one that does — sync applying a change from the cloud — keeps
+  ///   the value it set);
+  /// - every delete of a synced row is logged in [SyncDeletions].
+  /// Idempotent, so it can run on create and in a migration alike.
+  Future<void> _createSyncSchema() async {
+    const now = "CAST((julianday('now') - 2440587.5) * 86400000 AS INTEGER)";
+    for (final table in const ['categories', 'items', 'trips']) {
+      await customStatement(
+          'CREATE UNIQUE INDEX IF NOT EXISTS ${table}_uuid ON $table (uuid)');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS ${table}_touch AFTER UPDATE ON $table
+        WHEN NEW.updated_at = OLD.updated_at
+        BEGIN UPDATE $table SET updated_at = $now WHERE id = NEW.id; END''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS ${table}_forget AFTER DELETE ON $table
+        BEGIN
+          INSERT INTO sync_deletions (entity, entity_key, deleted_at)
+          VALUES ('$table', OLD.uuid, $now);
+        END''');
+    }
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS trip_items_touch AFTER UPDATE ON trip_items
+      WHEN NEW.updated_at = OLD.updated_at
+      BEGIN
+        UPDATE trip_items SET updated_at = $now
+        WHERE trip_id = NEW.trip_id AND item_id = NEW.item_id;
+      END''');
+    // Logged only while the trip and the item both still exist — once
+    // either is gone, its own deletion already takes the link with it.
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS trip_items_forget AFTER DELETE ON trip_items
+      WHEN EXISTS (SELECT 1 FROM trips WHERE id = OLD.trip_id)
+        AND EXISTS (SELECT 1 FROM items WHERE id = OLD.item_id)
+      BEGIN
+        INSERT INTO sync_deletions (entity, entity_key, deleted_at)
+        VALUES ('trip_items',
+          (SELECT uuid FROM trips WHERE id = OLD.trip_id) || '/' ||
+          (SELECT uuid FROM items WHERE id = OLD.item_id),
+          $now);
+      END''');
+  }
 
   /// A starter closet structure so a brand-new user isn't staring at a
   /// totally empty app — every one of these is a perfectly ordinary,

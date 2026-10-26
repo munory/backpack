@@ -269,6 +269,8 @@ class _ItemLine extends StatelessWidget {
     // quantity reads "(4 шт.)" here too.
     final asItem = Item(
       id: 0,
+      uuid: '',
+      updatedAt: 0,
       name: item.name,
       weightGrams: item.weightGrams,
       condition: item.condition,
