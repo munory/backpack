@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../account/account_provider.dart';
 import '../../common/l10n.dart';
 import '../../common/navigation.dart';
 import '../../common/theme.dart';
@@ -11,6 +12,9 @@ import '../../data/providers.dart';
 import '../data_transfer/export_file.dart';
 import '../data_transfer/gear_csv.dart';
 import '../data_transfer/gear_xlsx.dart';
+import '../account/delete_account_dialog.dart';
+import '../account/name_dialog.dart';
+import '../account/sign_in_screen.dart';
 import '../data_transfer/import_screen.dart';
 
 /// A summary of the whole closet up top, then plain grouped lists: data
@@ -38,8 +42,9 @@ class ProfileScreen extends ConsumerWidget {
         children: [
           Text(l.profile, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
-          // Not `const` — it must rebuild to pick up a theme change (see
+          // Not `const` — these must rebuild to pick up a theme change (see
           // BackpackApp in main.dart).
+          _AccountSection(),
           _SummaryCard(),
           _SectionLabel(l.sectionData),
           _Group(children: [
@@ -265,6 +270,141 @@ class _AttentionLine extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(child: Text(text, style: TextStyle(fontSize: 14, color: color))),
             Icon(Icons.chevron_right, size: 20, color: color),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// At the top of Profile — first who you are, then what you have. Signed
+/// out: an invitation to sign in. Signed in: a card with a round initial,
+/// the name (or the email, with "add a name"), then sign out and delete.
+/// Nothing while the app is still looking in the safe at launch — a blink.
+class _AccountSection extends ConsumerWidget {
+  const _AccountSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final account = ref.watch(accountProvider);
+    final rows = switch (account) {
+      AccountChecking() => null,
+      SignedOut() => [
+          _AccountCard(
+            initial: null,
+            title: l.signInOrCreate,
+            titleColor: AppColors.accent,
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SignInScreen()),
+            ),
+          ),
+        ],
+      SignedIn(:final user) => [
+          _AccountCard(
+            initial: (user.name ?? user.email).characters.first.toUpperCase(),
+            title: user.name ?? user.email,
+            subtitle: user.name != null ? user.email : l.addName,
+            subtitleColor: user.name != null ? null : AppColors.accent,
+            onTap: () => editAccountName(context, user.name),
+          ),
+          _Row(
+            label: l.signOut,
+            onTap: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              await ref.read(accountProvider.notifier).logout();
+              messenger.showSnackBar(SnackBar(content: Text(l.signedOut)));
+            },
+          ),
+          _Row(
+            label: l.deleteAccount,
+            color: AppColors.overWeight,
+            onTap: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              if (await confirmDeleteAccount(context)) {
+                messenger.showSnackBar(SnackBar(content: Text(l.accountDeleted)));
+              }
+            },
+          ),
+        ],
+    };
+    if (rows == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: _Group(children: rows),
+    );
+  }
+}
+
+/// The person, at a glance: a circle with their initial (a person icon when
+/// signed out), a title and an optional second line.
+class _AccountCard extends StatelessWidget {
+  const _AccountCard({
+    required this.initial,
+    required this.title,
+    required this.onTap,
+    this.titleColor,
+    this.subtitle,
+    this.subtitleColor,
+  });
+
+  final String? initial;
+  final String title;
+  final Color? titleColor;
+  final String? subtitle;
+  final Color? subtitleColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = AppColors.textSecondary.withValues(alpha: 0.6);
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: initial == null
+                  ? Icon(Icons.person_outline, color: AppColors.accent)
+                  : Text(
+                      initial!,
+                      style: TextStyle(color: AppColors.accent, fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: titleColor ?? AppColors.textPrimary,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 13, color: subtitleColor ?? AppColors.textSecondary),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 20, color: muted),
           ],
         ),
       ),

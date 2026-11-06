@@ -1111,6 +1111,324 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All trips'**
   String get allTrips;
+
+  /// No description provided for @signInOrCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in or create an account'**
+  String get signInOrCreate;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// No description provided for @signedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out. Your gear and trips are still on this phone.'**
+  String get signedOut;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your account?'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The account and everything stored in the cloud will be deleted for good. Gear and trips on this phone stay.'**
+  String get deleteAccountBody;
+
+  /// No description provided for @passwordToConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Password to confirm'**
+  String get passwordToConfirm;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted'**
+  String get accountDeleted;
+
+  /// No description provided for @signInTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signInTitle;
+
+  /// No description provided for @registerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get registerTitle;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @passwordRule.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters'**
+  String get passwordRule;
+
+  /// No description provided for @showPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Show password'**
+  String get showPassword;
+
+  /// No description provided for @hidePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide password'**
+  String get hidePassword;
+
+  /// No description provided for @signInButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signInButton;
+
+  /// No description provided for @registerButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get registerButton;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @noAccountYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No account yet?'**
+  String get noAccountYet;
+
+  /// No description provided for @registerLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Create one'**
+  String get registerLink;
+
+  /// No description provided for @haveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get haveAccount;
+
+  /// No description provided for @signInLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signInLink;
+
+  /// No description provided for @signedInAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as {email}'**
+  String signedInAs(Object email);
+
+  /// No description provided for @resetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset password'**
+  String get resetTitle;
+
+  /// No description provided for @resetIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll email you a 6-digit code to set a new password with.'**
+  String get resetIntro;
+
+  /// No description provided for @sendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get sendCode;
+
+  /// No description provided for @codeSentTo.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a code to {email}. Not there? Check your spam folder.'**
+  String codeSentTo(Object email);
+
+  /// No description provided for @code.
+  ///
+  /// In en, this message translates to:
+  /// **'Code from the email'**
+  String get code;
+
+  /// No description provided for @newPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get newPassword;
+
+  /// No description provided for @saveAndSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and sign in'**
+  String get saveAndSignIn;
+
+  /// No description provided for @resendCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the code again'**
+  String get resendCode;
+
+  /// No description provided for @resendIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Send again in {seconds}s'**
+  String resendIn(Object seconds);
+
+  /// No description provided for @pleaseWait.
+  ///
+  /// In en, this message translates to:
+  /// **'One moment…'**
+  String get pleaseWait;
+
+  /// No description provided for @errorInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong email or password'**
+  String get errorInvalidCredentials;
+
+  /// No description provided for @errorEmailTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'An account with this email already exists — try signing in'**
+  String get errorEmailTaken;
+
+  /// No description provided for @errorInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the email address'**
+  String get errorInvalidEmail;
+
+  /// No description provided for @errorPasswordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'The password needs at least 8 characters'**
+  String get errorPasswordTooShort;
+
+  /// No description provided for @errorInvalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'The code is wrong or has expired — request a new one'**
+  String get errorInvalidCode;
+
+  /// No description provided for @errorWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong password'**
+  String get errorWrongPassword;
+
+  /// No description provided for @errorTooManyAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again in a minute'**
+  String get errorTooManyAttempts;
+
+  /// No description provided for @errorNoConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach the server. Check your connection'**
+  String get errorNoConnection;
+
+  /// No description provided for @errorMailUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t send email right now. Try again later'**
+  String get errorMailUnavailable;
+
+  /// No description provided for @errorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again'**
+  String get errorGeneric;
+
+  /// No description provided for @errorEnterPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password'**
+  String get errorEnterPassword;
+
+  /// No description provided for @errorCodeDigits.
+  ///
+  /// In en, this message translates to:
+  /// **'The code has 6 digits'**
+  String get errorCodeDigits;
+
+  /// No description provided for @confirmEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your email'**
+  String get confirmEmailTitle;
+
+  /// No description provided for @confirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmButton;
+
+  /// No description provided for @changeEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Change email'**
+  String get changeEmail;
+
+  /// No description provided for @displayName.
+  ///
+  /// In en, this message translates to:
+  /// **'What should we call you'**
+  String get displayName;
+
+  /// No description provided for @nameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nameHint;
+
+  /// No description provided for @nameOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. You can leave it empty.'**
+  String get nameOptional;
+
+  /// No description provided for @addName.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your name'**
+  String get addName;
 }
 
 class _AppLocalizationsDelegate

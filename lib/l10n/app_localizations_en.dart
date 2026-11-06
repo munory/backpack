@@ -625,4 +625,177 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allTrips => 'All trips';
+
+  @override
+  String get signInOrCreate => 'Sign in or create an account';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get signedOut =>
+      'Signed out. Your gear and trips are still on this phone.';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete your account?';
+
+  @override
+  String get deleteAccountBody =>
+      'The account and everything stored in the cloud will be deleted for good. Gear and trips on this phone stay.';
+
+  @override
+  String get passwordToConfirm => 'Password to confirm';
+
+  @override
+  String get deleteAccountConfirm => 'Delete';
+
+  @override
+  String get accountDeleted => 'Account deleted';
+
+  @override
+  String get signInTitle => 'Sign in';
+
+  @override
+  String get registerTitle => 'Create account';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get passwordRule => 'At least 8 characters';
+
+  @override
+  String get showPassword => 'Show password';
+
+  @override
+  String get hidePassword => 'Hide password';
+
+  @override
+  String get signInButton => 'Sign in';
+
+  @override
+  String get registerButton => 'Create account';
+
+  @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get noAccountYet => 'No account yet?';
+
+  @override
+  String get registerLink => 'Create one';
+
+  @override
+  String get haveAccount => 'Already have an account?';
+
+  @override
+  String get signInLink => 'Sign in';
+
+  @override
+  String signedInAs(Object email) {
+    return 'Signed in as $email';
+  }
+
+  @override
+  String get resetTitle => 'Reset password';
+
+  @override
+  String get resetIntro =>
+      'We\'ll email you a 6-digit code to set a new password with.';
+
+  @override
+  String get sendCode => 'Send code';
+
+  @override
+  String codeSentTo(Object email) {
+    return 'We sent a code to $email. Not there? Check your spam folder.';
+  }
+
+  @override
+  String get code => 'Code from the email';
+
+  @override
+  String get newPassword => 'New password';
+
+  @override
+  String get saveAndSignIn => 'Save and sign in';
+
+  @override
+  String get resendCode => 'Send the code again';
+
+  @override
+  String resendIn(Object seconds) {
+    return 'Send again in ${seconds}s';
+  }
+
+  @override
+  String get pleaseWait => 'One moment…';
+
+  @override
+  String get errorInvalidCredentials => 'Wrong email or password';
+
+  @override
+  String get errorEmailTaken =>
+      'An account with this email already exists — try signing in';
+
+  @override
+  String get errorInvalidEmail => 'Check the email address';
+
+  @override
+  String get errorPasswordTooShort =>
+      'The password needs at least 8 characters';
+
+  @override
+  String get errorInvalidCode =>
+      'The code is wrong or has expired — request a new one';
+
+  @override
+  String get errorWrongPassword => 'Wrong password';
+
+  @override
+  String get errorTooManyAttempts => 'Too many attempts. Try again in a minute';
+
+  @override
+  String get errorNoConnection =>
+      'Can\'t reach the server. Check your connection';
+
+  @override
+  String get errorMailUnavailable =>
+      'Can\'t send email right now. Try again later';
+
+  @override
+  String get errorGeneric => 'Something went wrong. Please try again';
+
+  @override
+  String get errorEnterPassword => 'Enter your password';
+
+  @override
+  String get errorCodeDigits => 'The code has 6 digits';
+
+  @override
+  String get confirmEmailTitle => 'Confirm your email';
+
+  @override
+  String get confirmButton => 'Confirm';
+
+  @override
+  String get changeEmail => 'Change email';
+
+  @override
+  String get displayName => 'What should we call you';
+
+  @override
+  String get nameHint => 'Name';
+
+  @override
+  String get nameOptional => 'Optional. You can leave it empty.';
+
+  @override
+  String get addName => 'Add your name';
 }

@@ -633,4 +633,174 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get allTrips => 'Все походы';
+
+  @override
+  String get signInOrCreate => 'Войти или создать аккаунт';
+
+  @override
+  String get signOut => 'Выйти';
+
+  @override
+  String get signedOut => 'Выход выполнен. Вещи и походы остались на телефоне.';
+
+  @override
+  String get deleteAccount => 'Удалить аккаунт';
+
+  @override
+  String get deleteAccountTitle => 'Удалить аккаунт?';
+
+  @override
+  String get deleteAccountBody =>
+      'Аккаунт и всё, что хранится в облаке, удалятся навсегда. Вещи и походы на этом телефоне останутся.';
+
+  @override
+  String get passwordToConfirm => 'Пароль для подтверждения';
+
+  @override
+  String get deleteAccountConfirm => 'Удалить';
+
+  @override
+  String get accountDeleted => 'Аккаунт удалён';
+
+  @override
+  String get signInTitle => 'Вход';
+
+  @override
+  String get registerTitle => 'Регистрация';
+
+  @override
+  String get email => 'Почта';
+
+  @override
+  String get password => 'Пароль';
+
+  @override
+  String get passwordRule => 'Минимум 8 символов';
+
+  @override
+  String get showPassword => 'Показать пароль';
+
+  @override
+  String get hidePassword => 'Скрыть пароль';
+
+  @override
+  String get signInButton => 'Войти';
+
+  @override
+  String get registerButton => 'Создать аккаунт';
+
+  @override
+  String get forgotPassword => 'Не помню пароль';
+
+  @override
+  String get noAccountYet => 'Нет аккаунта?';
+
+  @override
+  String get registerLink => 'Зарегистрироваться';
+
+  @override
+  String get haveAccount => 'Уже есть аккаунт?';
+
+  @override
+  String get signInLink => 'Войти';
+
+  @override
+  String signedInAs(Object email) {
+    return 'Вход выполнен: $email';
+  }
+
+  @override
+  String get resetTitle => 'Сброс пароля';
+
+  @override
+  String get resetIntro =>
+      'Пришлём на почту код из 6 цифр — с ним можно задать новый пароль.';
+
+  @override
+  String get sendCode => 'Прислать код';
+
+  @override
+  String codeSentTo(Object email) {
+    return 'Код отправлен на $email. Если письма нет, загляни в «Спам».';
+  }
+
+  @override
+  String get code => 'Код из письма';
+
+  @override
+  String get newPassword => 'Новый пароль';
+
+  @override
+  String get saveAndSignIn => 'Сохранить и войти';
+
+  @override
+  String get resendCode => 'Отправить код снова';
+
+  @override
+  String resendIn(Object seconds) {
+    return 'Отправить снова через $seconds с';
+  }
+
+  @override
+  String get pleaseWait => 'Секунду…';
+
+  @override
+  String get errorInvalidCredentials => 'Неверная почта или пароль';
+
+  @override
+  String get errorEmailTaken =>
+      'Аккаунт с этой почтой уже есть — попробуй войти';
+
+  @override
+  String get errorInvalidEmail => 'Проверь адрес почты';
+
+  @override
+  String get errorPasswordTooShort => 'В пароле должно быть минимум 8 символов';
+
+  @override
+  String get errorInvalidCode => 'Код неверный или устарел — запроси новый';
+
+  @override
+  String get errorWrongPassword => 'Неверный пароль';
+
+  @override
+  String get errorTooManyAttempts =>
+      'Слишком много попыток. Попробуй через минуту';
+
+  @override
+  String get errorNoConnection => 'Нет связи с сервером. Проверь интернет';
+
+  @override
+  String get errorMailUnavailable =>
+      'Сейчас не получается отправить письмо. Попробуй позже';
+
+  @override
+  String get errorGeneric => 'Что-то пошло не так. Попробуй ещё раз';
+
+  @override
+  String get errorEnterPassword => 'Введи пароль';
+
+  @override
+  String get errorCodeDigits => 'В коде 6 цифр';
+
+  @override
+  String get confirmEmailTitle => 'Подтверждение почты';
+
+  @override
+  String get confirmButton => 'Подтвердить';
+
+  @override
+  String get changeEmail => 'Изменить почту';
+
+  @override
+  String get displayName => 'Как к тебе обращаться';
+
+  @override
+  String get nameHint => 'Имя';
+
+  @override
+  String get nameOptional => 'Необязательно. Можно оставить пустым.';
+
+  @override
+  String get addName => 'Добавить имя';
 }
