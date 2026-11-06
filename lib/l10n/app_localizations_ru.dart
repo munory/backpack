@@ -803,4 +803,18 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get addName => 'Добавить имя';
+
+  @override
+  String get syncing => 'Синхронизация…';
+
+  @override
+  String syncedAt(String time) {
+    return 'Синхронизировано в $time';
+  }
+
+  @override
+  String get syncOffline => 'Нет связи — синхронизируем позже';
+
+  @override
+  String get syncFailed => 'Не удалось синхронизировать — попробуем позже';
 }

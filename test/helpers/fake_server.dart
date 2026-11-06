@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
+import 'fake_sync_server.dart';
+
 /// A pretend server: answers like the real one, counts what it was asked.
 class FakeServer {
   int refreshCalls = 0;
@@ -16,6 +18,9 @@ class FakeServer {
   /// The code the pretend sign-up email contains.
   static const signupCode = '123456';
   int signupEmails = 0;
+
+  /// What POST /sync talks to.
+  final sync = FakeSyncServer();
 
   /// How long /me takes to answer.
   Duration meDelay = Duration.zero;
@@ -54,6 +59,9 @@ class FakeServer {
         if (!signedIn) return _json(401, {'error': 'unauthorized'});
         name = body['name'] as String?;
         return _json(200, {...user, 'name': name});
+      case 'POST /sync':
+        if (!signedIn) return _json(401, {'error': 'unauthorized'});
+        return _json(200, await sync.handle(body));
       case 'POST /auth/password-reset/request':
         return http.Response('', 429, headers: {'retry-after': '42'});
     }

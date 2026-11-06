@@ -798,4 +798,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get addName => 'Add your name';
+
+  @override
+  String get syncing => 'Syncing…';
+
+  @override
+  String syncedAt(String time) {
+    return 'Synced at $time';
+  }
+
+  @override
+  String get syncOffline => 'Offline — will sync later';
+
+  @override
+  String get syncFailed => 'Couldn’t sync — will try again later';
 }

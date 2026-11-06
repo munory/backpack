@@ -14,6 +14,7 @@ import 'features/dashboard/dashboard_screen.dart';
 import 'features/gear_list/gear_list_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/trips/trips_screen.dart';
+import 'sync/sync_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -104,6 +105,9 @@ class HomeShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tab = ref.watch(currentTabProvider);
     final l = context.l10n;
+    // Keeps sync running for as long as the app is: it starts and stops
+    // with signing in and out by itself.
+    ref.watch(syncProvider);
 
     return Scaffold(
       // Not `const` here either, for the same reason as `home:` above — a

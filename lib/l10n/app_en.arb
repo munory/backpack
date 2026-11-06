@@ -259,5 +259,10 @@
   "displayName": "What should we call you",
   "nameHint": "Name",
   "nameOptional": "Optional. You can leave it empty.",
-  "addName": "Add your name"
+  "addName": "Add your name",
+  "syncing": "Syncing…",
+  "syncedAt": "Synced at {time}",
+  "@syncedAt": {"placeholders":{"time":{"type":"String"}}},
+  "syncOffline": "Offline — will sync later",
+  "syncFailed": "Couldn’t sync — will try again later"
 }

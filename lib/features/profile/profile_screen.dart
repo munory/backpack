@@ -9,6 +9,7 @@ import '../../common/theme.dart';
 import '../../common/weight_format.dart';
 import '../../data/database.dart';
 import '../../data/providers.dart';
+import '../../sync/sync_controller.dart';
 import '../data_transfer/export_file.dart';
 import '../data_transfer/gear_csv.dart';
 import '../data_transfer/gear_xlsx.dart';
@@ -306,6 +307,7 @@ class _AccountSection extends ConsumerWidget {
             title: user.name ?? user.email,
             subtitle: user.name != null ? user.email : l.addName,
             subtitleColor: user.name != null ? null : AppColors.accent,
+            footer: const _SyncLine(),
             onTap: () => editAccountName(context, user.name),
           ),
           _Row(
@@ -346,6 +348,7 @@ class _AccountCard extends StatelessWidget {
     this.titleColor,
     this.subtitle,
     this.subtitleColor,
+    this.footer,
   });
 
   final String? initial;
@@ -353,6 +356,7 @@ class _AccountCard extends StatelessWidget {
   final Color? titleColor;
   final String? subtitle;
   final Color? subtitleColor;
+  final Widget? footer;
   final VoidCallback onTap;
 
   @override
@@ -401,6 +405,7 @@ class _AccountCard extends StatelessWidget {
                       style: TextStyle(fontSize: 13, color: subtitleColor ?? AppColors.textSecondary),
                     ),
                   ],
+                  if (footer != null) ...[const SizedBox(height: 4), footer!],
                 ],
               ),
             ),
@@ -408,6 +413,40 @@ class _AccountCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// How the last sync went, small and quiet: it's reassurance, not news.
+class _SyncLine extends ConsumerWidget {
+  const _SyncLine();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final (icon, text) = switch (ref.watch(syncProvider)) {
+      SyncOff() => (null, null),
+      Syncing() => (Icons.sync, l.syncing),
+      SyncDone(:final at) => (
+          Icons.cloud_done_outlined,
+          l.syncedAt(MaterialLocalizations.of(context).formatTimeOfDay(
+            TimeOfDay.fromDateTime(at),
+            alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+          )),
+        ),
+      SyncOffline() => (Icons.cloud_off_outlined, l.syncOffline),
+      SyncFailed() => (Icons.cloud_off_outlined, l.syncFailed),
+    };
+    if (text == null) return const SizedBox.shrink();
+    final color = AppColors.textSecondary;
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(text, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: color)),
+        ),
+      ],
     );
   }
 }

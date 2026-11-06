@@ -153,6 +153,38 @@ class SyncDeletions extends Table {
   IntColumn get deletedAt => integer()();
 }
 
+/// Synced rows created or changed on this device since they were last sent
+/// to the cloud — one entry per row however often it changed, filled by
+/// database triggers (see [_createSyncSchema]). A queue, not a timestamp
+/// comparison, so a phone whose clock jumps back still sends every edit.
+/// [rowKey] is the local id — for trip_items "tripId/itemId".
+class SyncOutbox extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get entity => text()();
+  TextColumn get rowKey => text()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {entity, rowKey},
+      ];
+}
+
+/// Sync's own bookmark, one row: how far into the cloud's change log this
+/// device has read, and which account the local data was last synced with.
+class SyncState extends Table {
+  IntColumn get id => integer().withDefault(const Constant(1))();
+
+  /// The server's `cursor` from the last sync; 0 = never synced.
+  IntColumn get cursor => integer().withDefault(const Constant(0))();
+
+  /// The account id the data was synced with — another one signing in
+  /// means a first sync for it (stage 13.2).
+  TextColumn get accountId => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Single-row table holding app-wide state: which trip is the active one
 /// shown on the dashboard, and the user's own light/dark preference.
 class AppSettings extends Table {
@@ -172,7 +204,7 @@ class AppSettings extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Categories, Items, Trips, TripItems, AppSettings, SyncDeletions])
+@DriftDatabase(tables: [Categories, Items, Trips, TripItems, AppSettings, SyncDeletions, SyncOutbox, SyncState])
 class AppDatabase extends _$AppDatabase {
   /// [seedLanguage] names the starter categories on a brand-new install —
   /// the phone's language, since nobody has picked one in the app yet.
@@ -185,7 +217,7 @@ class AppDatabase extends _$AppDatabase {
   final String seedLanguage;
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -193,6 +225,7 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
           await _createSyncSchema();
           await into(appSettings).insert(const AppSettingsCompanion());
+          await into(syncState).insert(const SyncStateCompanion());
           await _seedDefaultCategories();
         },
         onUpgrade: (m, from, to) async {
@@ -207,6 +240,7 @@ class AppDatabase extends _$AppDatabase {
             await m.createAll();
             await _createSyncSchema();
             await into(appSettings).insert(const AppSettingsCompanion());
+            await into(syncState).insert(const SyncStateCompanion());
             await _seedDefaultCategories();
             return;
           }
@@ -270,6 +304,17 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(syncDeletions);
             await _createSyncSchema();
           }
+          if (from < 21) {
+            // The touch triggers changed (they never move a row back in
+            // time now) — replaced, then the outbox and its triggers added.
+            for (final table in const ['categories', 'items', 'trips', 'trip_items']) {
+              await customStatement('DROP TRIGGER IF EXISTS ${table}_touch');
+            }
+            await m.createTable(syncOutbox);
+            await m.createTable(syncState);
+            await into(syncState).insert(const SyncStateCompanion());
+            await _createSyncSchema();
+          }
         },
       );
 
@@ -278,7 +323,10 @@ class AppDatabase extends _$AppDatabase {
   /// - every uuid is unique;
   /// - any update that doesn't set `updated_at` itself gets it bumped to
   ///   now (one that does — sync applying a change from the cloud — keeps
-  ///   the value it set);
+  ///   the value it set). Never backwards, though: if the row came from a
+  ///   device whose clock runs ahead, an edit here still ends up later than
+  ///   it, or the cloud would take the edit for an old one and drop it;
+  /// - every insert or update is queued in [SyncOutbox] for sending;
   /// - every delete of a synced row is logged in [SyncDeletions].
   /// Idempotent, so it can run on create and in a migration alike.
   Future<void> _createSyncSchema() async {
@@ -289,7 +337,16 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('''
         CREATE TRIGGER IF NOT EXISTS ${table}_touch AFTER UPDATE ON $table
         WHEN NEW.updated_at = OLD.updated_at
-        BEGIN UPDATE $table SET updated_at = $now WHERE id = NEW.id; END''');
+        BEGIN
+          UPDATE $table SET updated_at = MAX($now, OLD.updated_at + 1) WHERE id = NEW.id;
+        END''');
+      for (final event in const ['INSERT', 'UPDATE']) {
+        await customStatement('''
+          CREATE TRIGGER IF NOT EXISTS ${table}_queue_${event.toLowerCase()} AFTER $event ON $table
+          BEGIN
+            INSERT OR REPLACE INTO sync_outbox (entity, row_key) VALUES ('$table', CAST(NEW.id AS TEXT));
+          END''');
+      }
       await customStatement('''
         CREATE TRIGGER IF NOT EXISTS ${table}_forget AFTER DELETE ON $table
         BEGIN
@@ -301,9 +358,17 @@ class AppDatabase extends _$AppDatabase {
       CREATE TRIGGER IF NOT EXISTS trip_items_touch AFTER UPDATE ON trip_items
       WHEN NEW.updated_at = OLD.updated_at
       BEGIN
-        UPDATE trip_items SET updated_at = $now
+        UPDATE trip_items SET updated_at = MAX($now, OLD.updated_at + 1)
         WHERE trip_id = NEW.trip_id AND item_id = NEW.item_id;
       END''');
+    for (final event in const ['INSERT', 'UPDATE']) {
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS trip_items_queue_${event.toLowerCase()} AFTER $event ON trip_items
+        BEGIN
+          INSERT OR REPLACE INTO sync_outbox (entity, row_key)
+          VALUES ('trip_items', NEW.trip_id || '/' || NEW.item_id);
+        END''');
+    }
     // Logged only while the trip and the item both still exist — once
     // either is gone, its own deletion already takes the link with it.
     await customStatement('''

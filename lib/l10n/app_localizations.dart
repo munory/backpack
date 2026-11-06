@@ -1429,6 +1429,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add your name'**
   String get addName;
+
+  /// No description provided for @syncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get syncing;
+
+  /// No description provided for @syncedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced at {time}'**
+  String syncedAt(String time);
+
+  /// No description provided for @syncOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline — will sync later'**
+  String get syncOffline;
+
+  /// No description provided for @syncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t sync — will try again later'**
+  String get syncFailed;
 }
 
 class _AppLocalizationsDelegate
