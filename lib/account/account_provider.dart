@@ -3,6 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'api_client.dart';
 import 'token_store.dart';
 
+/// Accounts and sync are built and tested but switched off for now: the app
+/// ships local-only until the server runs somewhere real (decided
+/// 2026-11-07). Turned on per build — for a demo, or once deployed — with
+/// `--dart-define=ACCOUNTS=true`. Off, nobody is ever signed in: Profile shows
+/// no account, nothing talks to the server. A provider so tests can flip it.
+final accountsEnabledProvider = Provider<bool>((ref) => const bool.fromEnvironment('ACCOUNTS'));
+
 /// Where the session is kept. Overridden in tests with a [MemoryTokenStore].
 final tokenStoreProvider = Provider<TokenStore>((ref) => SecureTokenStore());
 
@@ -40,6 +47,7 @@ class AccountNotifier extends Notifier<AccountState> {
 
   @override
   AccountState build() {
+    if (!ref.watch(accountsEnabledProvider)) return const SignedOut();
     // The server ended the session on its own (password changed on another
     // phone, account deleted elsewhere, 30 days unused) — show it.
     _api.onSessionExpired = () {

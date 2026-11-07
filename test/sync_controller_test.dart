@@ -33,7 +33,8 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         databaseProvider.overrideWithValue(db),
-        tokenStoreProvider.overrideWithValue(store),
+        accountsEnabledProvider.overrideWithValue(true),
+      tokenStoreProvider.overrideWithValue(store),
         apiClientProvider.overrideWithValue(
           ApiClient(tokens: store, httpClient: server.client, baseUrl: 'http://server'),
         ),

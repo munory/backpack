@@ -14,8 +14,9 @@ void main() {
   setUp(() => server = FakeServer());
 
   /// The app's providers, but with the session in memory and a pretend server.
-  ProviderContainer appWith(MemoryTokenStore store) {
+  ProviderContainer appWith(MemoryTokenStore store, {bool accountsEnabled = true}) {
     final container = ProviderContainer(overrides: [
+      accountsEnabledProvider.overrideWithValue(accountsEnabled),
       tokenStoreProvider.overrideWithValue(store),
       apiClientProvider.overrideWithValue(
         ApiClient(tokens: store, httpClient: server.client, baseUrl: 'http://server'),
@@ -29,6 +30,17 @@ void main() {
 
   /// Lets the background launch check finish.
   Future<void> settle() => Future<void>.delayed(const Duration(milliseconds: 50));
+
+  test('accounts switched off: signed out, even with a saved session, and the server is never asked', () async {
+    final app = appWith(
+      MemoryTokenStore(const Tokens(access: 'access-1', refresh: 'refresh-1'), kate),
+      accountsEnabled: false,
+    );
+    await settle();
+
+    expect(app.read(accountProvider), isA<SignedOut>());
+    expect(server.meCalls, 0);
+  });
 
   test('a fresh install is signed out', () async {
     final app = appWith(MemoryTokenStore());

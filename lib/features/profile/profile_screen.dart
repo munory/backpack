@@ -287,6 +287,7 @@ class _AccountSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(accountsEnabledProvider)) return const SizedBox.shrink();
     final l = context.l10n;
     final account = ref.watch(accountProvider);
     final rows = switch (account) {

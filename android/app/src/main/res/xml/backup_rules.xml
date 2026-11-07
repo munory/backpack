@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android's own backup to the user's Google Drive (Android 11 and older).
+     Everything is backed up — the gear database, settings — except the
+     sign-in tokens: they're encrypted with a key that lives in this phone's
+     security chip and never leaves it, so on a new phone they couldn't be
+     read anyway (and the storage plugin would fail on them). -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+    <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+</full-backup-content>

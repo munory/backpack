@@ -1,10 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Accounts and sync talk to the Backpack server. -->
+    <!-- Accounts and sync talk to the Backpack server (switched off in builds
+         without ACCOUNTS=true, see lib/account/account_provider.dart). -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="backpack"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"
