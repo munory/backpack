@@ -11,9 +11,10 @@ import '../../data/database.dart';
 import '../../data/providers.dart';
 import 'create_trip_screen.dart';
 
-/// Every trip, with the active one marked. Tapping a trip makes it active
-/// and jumps to Главная (which always shows the active trip); long-press
-/// edits, duplicates or deletes. Trips that have already ended collect in
+/// Every trip, with the active one marked. "Выбрать" on a card makes that
+/// trip the one on Главная and goes there; tapping the card opens the trip
+/// to edit, duplicate or delete it. Long-press is a quiet shortcut to the
+/// same actions. Trips that have already ended collect in
 /// a collapsed "Архив" group at the bottom — kept as templates to copy,
 /// out of the way of what's coming up.
 class TripsScreen extends ConsumerStatefulWidget {
@@ -27,9 +28,7 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
   bool _archiveExpanded = false;
 
   void _openForm({Trip? editing}) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => TripFormScreen(editing: editing)),
-    );
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => TripFormScreen(editing: editing)));
   }
 
   @override
@@ -53,18 +52,15 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
     final today = DateUtils.dateOnly(DateTime.now());
     bool isPast(Trip t) => t.endDate != null && DateUtils.dateOnly(t.endDate!).isBefore(today);
     // The draft is the working scratch list — pinned to the top.
-    final upcoming = [
-      ...trips.where((t) => t.isDraft),
-      ...trips.where((t) => !t.isDraft && !isPast(t)),
-    ];
+    final upcoming = [...trips.where((t) => t.isDraft), ...trips.where((t) => !t.isDraft && !isPast(t))];
     final past = trips.where(isPast).toList();
 
     Widget card(Trip t) => _TripCard(
-          trip: t,
-          summary: summaries[t.id],
-          isActive: t.id == activeId,
-          onEdit: () => _openForm(editing: t),
-        );
+      trip: t,
+      summary: summaries[t.id],
+      isActive: t.id == activeId,
+      onEdit: () => _openForm(editing: t),
+    );
 
     return SafeArea(
       child: ListView(
@@ -74,10 +70,7 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Text(
-                  l.myTrips,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-                ),
+                child: Text(l.myTrips, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
               ),
               TextButton.icon(
                 onPressed: _openForm,
@@ -114,7 +107,8 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
                 ),
               ),
             ),
-            if (_archiveExpanded) for (final t in past) card(t),
+            if (_archiveExpanded)
+              for (final t in past) card(t),
           ],
         ],
       ),
@@ -123,12 +117,7 @@ class _TripsScreenState extends ConsumerState<TripsScreen> {
 }
 
 class _TripCard extends ConsumerWidget {
-  const _TripCard({
-    required this.trip,
-    required this.summary,
-    required this.isActive,
-    required this.onEdit,
-  });
+  const _TripCard({required this.trip, required this.summary, required this.isActive, required this.onEdit});
 
   final Trip trip;
   final TripSummary? summary;
@@ -143,10 +132,7 @@ class _TripCard extends ConsumerWidget {
     final l = context.l10n;
     final selected = await showMenu<String>(
       context: context,
-      position: RelativeRect.fromRect(
-        Rect.fromPoints(topLeft, bottomRight),
-        Offset.zero & overlay.size,
-      ),
+      position: RelativeRect.fromRect(Rect.fromPoints(topLeft, bottomRight), Offset.zero & overlay.size),
       items: [
         if (trip.isDraft)
           PopupMenuItem(value: 'edit', child: Text(l.turnIntoTrip))
@@ -166,54 +152,10 @@ class _TripCard extends ConsumerWidget {
       case 'edit':
         onEdit();
       case 'duplicate':
-        // Like a duplicated item, a copied trip almost always needs a new
-        // name/dates — open it straight into editing.
-        final id = await db.duplicateTrip(trip, copyWord: l.copyWord);
-        final copy = await (db.select(db.trips)..where((t) => t.id.equals(id))).getSingle();
-        if (context.mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => TripFormScreen(editing: copy)),
-          );
-        }
+        await duplicateTripAndOpen(context, ref, trip);
       case 'delete':
-        if (await _confirmDelete(context)) await db.deleteTrip(trip.id);
+        if (await confirmDeleteTrip(context, trip)) await db.deleteTrip(trip.id);
     }
-  }
-
-  Future<bool> _confirmDelete(BuildContext context) async {
-    final l = context.l10n;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l.deleteTripTitle(tripName(l, trip))),
-        content: Text(
-          l.deleteTripBody,
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
-        ),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
-                  child: Text(l.cancel),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.overWeight),
-                  onPressed: () => Navigator.pop(context, true),
-                  child: Text(l.delete),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-    return ok ?? false;
   }
 
   @override
@@ -236,10 +178,7 @@ class _TripCard extends ConsumerWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () async {
-          await ref.read(databaseProvider).setActiveTrip(trip.id);
-          ref.read(currentTabProvider.notifier).state = 0;
-        },
+        onTap: onEdit,
         onLongPress: () => _showMenu(context, ref),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
@@ -249,11 +188,7 @@ class _TripCard extends ConsumerWidget {
               Row(
                 children: [
                   if (trip.isDraft) ...[
-                    Icon(
-                      Icons.edit_note,
-                      size: 20,
-                      color: AppColors.textSecondary.withValues(alpha: 0.7),
-                    ),
+                    Icon(Icons.edit_note, size: 20, color: AppColors.textSecondary.withValues(alpha: 0.7)),
                     const SizedBox(width: 6),
                   ],
                   Expanded(
@@ -267,19 +202,19 @@ class _TripCard extends ConsumerWidget {
                   if (isActive)
                     Text(
                       l.active,
-                      style: TextStyle(
-                        color: AppColors.accent,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.w600),
+                    )
+                  else
+                    _SelectButton(
+                      onTap: () async {
+                        await ref.read(databaseProvider).setActiveTrip(trip.id);
+                        ref.read(currentTabProvider.notifier).state = 0;
+                      },
                     ),
                 ],
               ),
               const SizedBox(height: 2),
-              Text(
-                meta,
-                style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.65), fontSize: 13),
-              ),
+              Text(meta, style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.65), fontSize: 13)),
               const SizedBox(height: 10),
               Row(
                 children: [
@@ -290,7 +225,9 @@ class _TripCard extends ConsumerWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
-                          value: (grams / target).clamp(0, 1).toDouble(),
+                          // A sliver at least, once anything's packed —
+                          // 40 g of 23 kg would be invisible otherwise.
+                          value: grams == 0 ? 0 : (grams / target).clamp(0.03, 1).toDouble(),
                           minHeight: 6,
                           backgroundColor: AppColors.trackBackground,
                           color: over ? AppColors.overWeight : AppColors.gear,
@@ -301,7 +238,11 @@ class _TripCard extends ConsumerWidget {
                     const Spacer(),
                   const SizedBox(width: 12),
                   Text(
-                    target == null ? formatWeight(context, grams) : '${formatWeight(context, grams)} / ${formatWeight(context, target)}',
+                    target == null
+                        ? formatWeight(context, grams)
+                        : switch (formatWeightPair(context, grams, target)) {
+                            (final weight, final goal) => '$weight / $goal',
+                          },
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -313,6 +254,33 @@ class _TripCard extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Выбрать" — a small outlined pill where the active trip says "Активный",
+/// so the card keeps its height either way.
+class _SelectButton extends StatelessWidget {
+  const _SelectButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.accent),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          context.l10n.selectTrip,
+          style: TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.w600),
         ),
       ),
     );

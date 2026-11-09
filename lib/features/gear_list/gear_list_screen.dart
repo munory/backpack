@@ -158,7 +158,8 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
                         : i.categoryId == null)
                     .toList(),
                 packedItemIds: packedItemIds,
-                onTogglePacked: (item, packed) => db.setItemPacked(item.id, packed),
+                onTogglePacked: (item, packed, quantity) => db.setItemPacked(item.id, packed, quantity: quantity),
+                onToggleAllPacked: (items, packed) => db.setItemsPacked([for (final i in items) i.id], packed),
                 onEditItem: (item) => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => AddItemScreen(editing: item)),
                 ),
@@ -171,7 +172,7 @@ class _GearListScreenState extends ConsumerState<GearListScreen> {
                   }
                 },
                 destructiveActionLabel: l.delete,
-                onDestructiveAction: (item) => db.deleteItem(item.id),
+                onDestructiveAction: (item) => deleteItemWithConfirmation(context, db, item),
                 onAddItem: entry.category == null
                     ? null
                     : () => Navigator.of(context).push(
@@ -616,6 +617,8 @@ class _PackingForLine extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Keeps the trip list loaded for the switcher menu.
+    ref.watch(tripsProvider);
     return Align(
       alignment: Alignment.centerLeft,
       child: InkWell(

@@ -2123,6 +2123,21 @@ class $AppSettingsTable extends AppSettings
         type: DriftSqlType.int,
         requiredDuringInsert: false,
       ).withConverter<WeightUnit?>($AppSettingsTable.$converterweightUnitn);
+  static const VerificationMeta _confirmItemDeleteMeta = const VerificationMeta(
+    'confirmItemDelete',
+  );
+  @override
+  late final GeneratedColumn<bool> confirmItemDelete = GeneratedColumn<bool>(
+    'confirm_item_delete',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("confirm_item_delete" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2130,6 +2145,7 @@ class $AppSettingsTable extends AppSettings
     themeMode,
     language,
     weightUnit,
+    confirmItemDelete,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2152,6 +2168,15 @@ class $AppSettingsTable extends AppSettings
         activeTripId.isAcceptableOrUnknown(
           data['active_trip_id']!,
           _activeTripIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('confirm_item_delete')) {
+      context.handle(
+        _confirmItemDeleteMeta,
+        confirmItemDelete.isAcceptableOrUnknown(
+          data['confirm_item_delete']!,
+          _confirmItemDeleteMeta,
         ),
       );
     }
@@ -2190,6 +2215,10 @@ class $AppSettingsTable extends AppSettings
           data['${effectivePrefix}weight_unit'],
         ),
       ),
+      confirmItemDelete: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}confirm_item_delete'],
+      )!,
     );
   }
 
@@ -2217,12 +2246,18 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
   /// Null until picked in Профиль — then the language decides (kilograms
   /// for Russian, pounds for English).
   final WeightUnit? weightUnit;
+
+  /// Ask before deleting an item? On until "Больше не спрашивать" is ticked
+  /// in that question; back on from Профиль. Categories and trips are
+  /// always asked about — too much goes with them.
+  final bool confirmItemDelete;
   const AppSetting({
     required this.id,
     this.activeTripId,
     required this.themeMode,
     required this.language,
     this.weightUnit,
+    required this.confirmItemDelete,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2246,6 +2281,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
         $AppSettingsTable.$converterweightUnitn.toSql(weightUnit),
       );
     }
+    map['confirm_item_delete'] = Variable<bool>(confirmItemDelete);
     return map;
   }
 
@@ -2260,6 +2296,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       weightUnit: weightUnit == null && nullToAbsent
           ? const Value.absent()
           : Value(weightUnit),
+      confirmItemDelete: Value(confirmItemDelete),
     );
   }
 
@@ -2280,6 +2317,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       weightUnit: $AppSettingsTable.$converterweightUnitn.fromJson(
         serializer.fromJson<int?>(json['weightUnit']),
       ),
+      confirmItemDelete: serializer.fromJson<bool>(json['confirmItemDelete']),
     );
   }
   @override
@@ -2297,6 +2335,7 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       'weightUnit': serializer.toJson<int?>(
         $AppSettingsTable.$converterweightUnitn.toJson(weightUnit),
       ),
+      'confirmItemDelete': serializer.toJson<bool>(confirmItemDelete),
     };
   }
 
@@ -2306,12 +2345,14 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
     AppThemeMode? themeMode,
     AppLanguage? language,
     Value<WeightUnit?> weightUnit = const Value.absent(),
+    bool? confirmItemDelete,
   }) => AppSetting(
     id: id ?? this.id,
     activeTripId: activeTripId.present ? activeTripId.value : this.activeTripId,
     themeMode: themeMode ?? this.themeMode,
     language: language ?? this.language,
     weightUnit: weightUnit.present ? weightUnit.value : this.weightUnit,
+    confirmItemDelete: confirmItemDelete ?? this.confirmItemDelete,
   );
   AppSetting copyWithCompanion(AppSettingsCompanion data) {
     return AppSetting(
@@ -2324,6 +2365,9 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
       weightUnit: data.weightUnit.present
           ? data.weightUnit.value
           : this.weightUnit,
+      confirmItemDelete: data.confirmItemDelete.present
+          ? data.confirmItemDelete.value
+          : this.confirmItemDelete,
     );
   }
 
@@ -2334,14 +2378,21 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           ..write('activeTripId: $activeTripId, ')
           ..write('themeMode: $themeMode, ')
           ..write('language: $language, ')
-          ..write('weightUnit: $weightUnit')
+          ..write('weightUnit: $weightUnit, ')
+          ..write('confirmItemDelete: $confirmItemDelete')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, activeTripId, themeMode, language, weightUnit);
+  int get hashCode => Object.hash(
+    id,
+    activeTripId,
+    themeMode,
+    language,
+    weightUnit,
+    confirmItemDelete,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2350,7 +2401,8 @@ class AppSetting extends DataClass implements Insertable<AppSetting> {
           other.activeTripId == this.activeTripId &&
           other.themeMode == this.themeMode &&
           other.language == this.language &&
-          other.weightUnit == this.weightUnit);
+          other.weightUnit == this.weightUnit &&
+          other.confirmItemDelete == this.confirmItemDelete);
 }
 
 class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
@@ -2359,12 +2411,14 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   final Value<AppThemeMode> themeMode;
   final Value<AppLanguage> language;
   final Value<WeightUnit?> weightUnit;
+  final Value<bool> confirmItemDelete;
   const AppSettingsCompanion({
     this.id = const Value.absent(),
     this.activeTripId = const Value.absent(),
     this.themeMode = const Value.absent(),
     this.language = const Value.absent(),
     this.weightUnit = const Value.absent(),
+    this.confirmItemDelete = const Value.absent(),
   });
   AppSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -2372,6 +2426,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     this.themeMode = const Value.absent(),
     this.language = const Value.absent(),
     this.weightUnit = const Value.absent(),
+    this.confirmItemDelete = const Value.absent(),
   });
   static Insertable<AppSetting> custom({
     Expression<int>? id,
@@ -2379,6 +2434,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Expression<int>? themeMode,
     Expression<int>? language,
     Expression<int>? weightUnit,
+    Expression<bool>? confirmItemDelete,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2386,6 +2442,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       if (themeMode != null) 'theme_mode': themeMode,
       if (language != null) 'language': language,
       if (weightUnit != null) 'weight_unit': weightUnit,
+      if (confirmItemDelete != null) 'confirm_item_delete': confirmItemDelete,
     });
   }
 
@@ -2395,6 +2452,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
     Value<AppThemeMode>? themeMode,
     Value<AppLanguage>? language,
     Value<WeightUnit?>? weightUnit,
+    Value<bool>? confirmItemDelete,
   }) {
     return AppSettingsCompanion(
       id: id ?? this.id,
@@ -2402,6 +2460,7 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
       themeMode: themeMode ?? this.themeMode,
       language: language ?? this.language,
       weightUnit: weightUnit ?? this.weightUnit,
+      confirmItemDelete: confirmItemDelete ?? this.confirmItemDelete,
     );
   }
 
@@ -2429,6 +2488,9 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
         $AppSettingsTable.$converterweightUnitn.toSql(weightUnit.value),
       );
     }
+    if (confirmItemDelete.present) {
+      map['confirm_item_delete'] = Variable<bool>(confirmItemDelete.value);
+    }
     return map;
   }
 
@@ -2439,7 +2501,8 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
           ..write('activeTripId: $activeTripId, ')
           ..write('themeMode: $themeMode, ')
           ..write('language: $language, ')
-          ..write('weightUnit: $weightUnit')
+          ..write('weightUnit: $weightUnit, ')
+          ..write('confirmItemDelete: $confirmItemDelete')
           ..write(')'))
         .toString();
   }
@@ -5083,6 +5146,7 @@ typedef $$AppSettingsTableCreateCompanionBuilder =
       Value<AppThemeMode> themeMode,
       Value<AppLanguage> language,
       Value<WeightUnit?> weightUnit,
+      Value<bool> confirmItemDelete,
     });
 typedef $$AppSettingsTableUpdateCompanionBuilder =
     AppSettingsCompanion Function({
@@ -5091,6 +5155,7 @@ typedef $$AppSettingsTableUpdateCompanionBuilder =
       Value<AppThemeMode> themeMode,
       Value<AppLanguage> language,
       Value<WeightUnit?> weightUnit,
+      Value<bool> confirmItemDelete,
     });
 
 final class $$AppSettingsTableReferences
@@ -5147,6 +5212,11 @@ class $$AppSettingsTableFilterComposer
         builder: (column) => ColumnWithTypeConverterFilters(column),
       );
 
+  ColumnFilters<bool> get confirmItemDelete => $composableBuilder(
+    column: $table.confirmItemDelete,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$TripsTableFilterComposer get activeTripId {
     final $$TripsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -5200,6 +5270,11 @@ class $$AppSettingsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get confirmItemDelete => $composableBuilder(
+    column: $table.confirmItemDelete,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$TripsTableOrderingComposer get activeTripId {
     final $$TripsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5247,6 +5322,11 @@ class $$AppSettingsTableAnnotationComposer
         column: $table.weightUnit,
         builder: (column) => column,
       );
+
+  GeneratedColumn<bool> get confirmItemDelete => $composableBuilder(
+    column: $table.confirmItemDelete,
+    builder: (column) => column,
+  );
 
   $$TripsTableAnnotationComposer get activeTripId {
     final $$TripsTableAnnotationComposer composer = $composerBuilder(
@@ -5305,12 +5385,14 @@ class $$AppSettingsTableTableManager
                 Value<AppThemeMode> themeMode = const Value.absent(),
                 Value<AppLanguage> language = const Value.absent(),
                 Value<WeightUnit?> weightUnit = const Value.absent(),
+                Value<bool> confirmItemDelete = const Value.absent(),
               }) => AppSettingsCompanion(
                 id: id,
                 activeTripId: activeTripId,
                 themeMode: themeMode,
                 language: language,
                 weightUnit: weightUnit,
+                confirmItemDelete: confirmItemDelete,
               ),
           createCompanionCallback:
               ({
@@ -5319,12 +5401,14 @@ class $$AppSettingsTableTableManager
                 Value<AppThemeMode> themeMode = const Value.absent(),
                 Value<AppLanguage> language = const Value.absent(),
                 Value<WeightUnit?> weightUnit = const Value.absent(),
+                Value<bool> confirmItemDelete = const Value.absent(),
               }) => AppSettingsCompanion.insert(
                 id: id,
                 activeTripId: activeTripId,
                 themeMode: themeMode,
                 language: language,
                 weightUnit: weightUnit,
+                confirmItemDelete: confirmItemDelete,
               ),
           withReferenceMapper: (p0) => p0
               .map(

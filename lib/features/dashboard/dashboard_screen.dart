@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../common/category_actions.dart';
 import '../../common/category_card.dart';
 import '../../common/category_form_sheet.dart';
 import '../../common/empty_state.dart';
@@ -60,10 +59,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const SizedBox(height: 6),
               Text(
                 l.clearTargetHint,
-                style: TextStyle(
-                  color: AppColors.textSecondary.withValues(alpha: 0.6),
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.6), fontSize: 12),
               ),
             ],
           ],
@@ -124,15 +120,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // Categories are shared master data — unlike the Gear list (whole
     // closet), an empty category here just means nothing from it is packed
     // for this trip yet, so it shouldn't take up space on the dashboard.
-    final rootTotals =
-        ref.watch(rootCategoryTotalsProvider).where((e) => e.weightGrams > 0).toList();
+    final rootTotals = ref.watch(rootCategoryTotalsProvider).where((e) => e.weightGrams > 0).toList();
     final itemsAsync = ref.watch(activeTripItemsProvider);
     // The trip's items carry the *trip's* quantity (see
     // activeTripItemsProvider); editing or copying must start from the
     // real closet row, or saving would overwrite how many you own.
-    final closetById = {
-      for (final i in ref.watch(allItemsProvider).value ?? const <Item>[]) i.id: i,
-    };
+    final closetById = {for (final i in ref.watch(allItemsProvider).value ?? const <Item>[]) i.id: i};
     final l = context.l10n;
 
     if (rootTotals.isEmpty) {
@@ -165,8 +158,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // Everything except food/water — the number ultralight folks actually
     // compare trip to trip, since food and water get eaten/drunk and don't
     // reflect what your gear itself weighs.
-    final baseWeightGrams =
-        totalGrams - (byType[PackType.food] ?? 0) - (byType[PackType.water] ?? 0);
+    final baseWeightGrams = totalGrams - (byType[PackType.food] ?? 0) - (byType[PackType.water] ?? 0);
 
     return SafeArea(
       child: ListView(
@@ -183,10 +175,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Center(
-                  child: _WeightViewToggle(
-                    value: _view,
-                    onChanged: (v) => setState(() => _view = v),
-                  ),
+                  child: _WeightViewToggle(value: _view, onChanged: (v) => setState(() => _view = v)),
                 ),
                 const SizedBox(height: 8),
                 if (_view == _WeightView.total) ...[
@@ -194,7 +183,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     child: Text(
                       targetGrams == null
                           ? formatWeight(context, totalGrams)
-                          : '${formatWeight(context, totalGrams)} ⁄ ${formatWeight(context, targetGrams)}',
+                          : switch (formatWeightPair(context, totalGrams, targetGrams)) {
+                              (final weight, final target) => '$weight ⁄ $target',
+                            },
                       style: weightDisplayStyle(isOverweight: isOverweight),
                     ),
                   ),
@@ -202,10 +193,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     Center(
                       child: Text(
                         l.wornOnYou(formatWeight(context, wornGrams)),
-                        style: TextStyle(
-                          color: AppColors.textSecondary.withValues(alpha: 0.65),
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.65), fontSize: 13),
                       ),
                     ),
                   Center(
@@ -222,19 +210,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ] else ...[
                   Center(
-                    child: Text(
-                      formatWeight(context, baseWeightGrams),
-                      style: weightDisplayStyle(isOverweight: false),
-                    ),
+                    child: Text(formatWeight(context, baseWeightGrams), style: weightDisplayStyle(isOverweight: false)),
                   ),
                   const SizedBox(height: 2),
                   Center(
                     child: Text(
                       l.baseWeightHint,
-                      style: TextStyle(
-                        color: AppColors.textSecondary.withValues(alpha: 0.65),
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.65), fontSize: 12),
                     ),
                   ),
                 ],
@@ -255,23 +237,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               category: entry.category,
               weightGrams: entry.weightGrams,
               items: (itemsAsync.value ?? const [])
-                  .where((i) => entry.category != null
-                      ? i.categoryId == entry.category!.id
-                      : i.categoryId == null)
+                  .where((i) => entry.category != null ? i.categoryId == entry.category!.id : i.categoryId == null)
                   .toList(),
-              onEditItem: (item) => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => AddItemScreen(editing: closetById[item.id] ?? item),
-                ),
-              ),
+              onEditItem: (item) => Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => AddItemScreen(editing: closetById[item.id] ?? item))),
               onDuplicateItem: (item) async {
                 final duplicated = await ref
                     .read(databaseProvider)
                     .duplicateItem(closetById[item.id] ?? item, copyWord: l.copyWord);
                 if (context.mounted) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => AddItemScreen(editing: duplicated)),
-                  );
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => AddItemScreen(editing: duplicated)));
                 }
               },
               ownedQuantities: {for (final e in closetById.entries) e.key: e.value.quantity},
@@ -279,22 +255,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 final owned = closetById[item.id]?.quantity;
                 // Back at "all of them" → store null, so raising the closet
                 // quantity later still means "take all" on this trip.
-                ref.read(databaseProvider).setTripItemQuantity(
-                      trip.id,
-                      item.id,
-                      quantity == owned ? null : quantity,
-                    );
+                ref.read(databaseProvider).setTripItemQuantity(trip.id, item.id, quantity == owned ? null : quantity);
               },
               destructiveActionLabel: l.removeFromTrip,
               destructiveActionDangerous: false,
-              onDestructiveAction: (item) =>
-                  ref.read(databaseProvider).setItemPacked(item.id, false),
+              onDestructiveAction: (item) => ref.read(databaseProvider).setItemPacked(item.id, false),
               onEditCategory: (category) => showCategoryFormSheet(context, editing: category),
-              onDeleteCategory: (category) => deleteCategoryWithConfirmation(
-                context,
-                ref.read(databaseProvider),
-                category,
-              ),
+              // On Главная a category is taken off the trip, like an item —
+              // deleting it for good is Инвентарь's job.
+              deleteCategoryLabel: l.removeFromTrip,
+              deleteCategoryDangerous: false,
+              onDeleteCategory: (category) => ref.read(databaseProvider).removeCategoryFromTrip(trip.id, category.id),
+              onRemoveUncategorized: () => ref.read(databaseProvider).removeCategoryFromTrip(trip.id, null),
             ),
         ],
       ),
@@ -338,10 +310,7 @@ class _WeightViewToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: AppColors.trackBackground,
-        borderRadius: BorderRadius.circular(21),
-      ),
+      decoration: BoxDecoration(color: AppColors.trackBackground, borderRadius: BorderRadius.circular(21)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -353,7 +322,6 @@ class _WeightViewToggle extends StatelessWidget {
   }
 }
 
-
 /// "Карелия на выходные ▾ · 12–14 окт" above the weight card — tap to jump
 /// to another trip without leaving Главная. An anchored menu rather than a
 /// sheet, same as every other picker in the app.
@@ -364,6 +332,8 @@ class _TripSwitcher extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Keeps the trip list loaded for the switcher menu.
+    ref.watch(tripsProvider);
     final l = context.l10n;
     final dates = formatTripDates(trip.startDate, trip.endDate, languageCode: l.localeName);
     return Align(
@@ -391,13 +361,7 @@ class _TripSwitcher extends ConsumerWidget {
                 ],
               ),
               if (dates != null)
-                Text(
-                  dates,
-                  style: TextStyle(
-                    color: AppColors.textSecondary.withValues(alpha: 0.7),
-                    fontSize: 13,
-                  ),
-                ),
+                Text(dates, style: TextStyle(color: AppColors.textSecondary.withValues(alpha: 0.7), fontSize: 13)),
             ],
           ),
         ),
@@ -428,9 +392,7 @@ class _PackingButton extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const PackingScreen()),
-        ),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PackingScreen())),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
@@ -451,10 +413,7 @@ class _PackingButton extends StatelessWidget {
                     ),
                     Text(
                       context.l10n.packingSubtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary.withValues(alpha: 0.65),
-                      ),
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary.withValues(alpha: 0.65)),
                     ),
                   ],
                 ),

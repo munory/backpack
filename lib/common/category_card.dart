@@ -38,6 +38,7 @@ class CategoryCard extends StatefulWidget {
     this.category,
     this.packedItemIds,
     this.onTogglePacked,
+    this.onToggleAllPacked,
     this.onEditItem,
     this.onDuplicateItem,
     this.destructiveActionLabel,
@@ -45,6 +46,9 @@ class CategoryCard extends StatefulWidget {
     this.destructiveActionDangerous = true,
     this.onEditCategory,
     this.onDeleteCategory,
+    this.deleteCategoryLabel,
+    this.deleteCategoryDangerous = true,
+    this.onRemoveUncategorized,
     this.onAddItem,
     this.ownedQuantities,
     this.onTripQuantityChanged,
@@ -56,7 +60,11 @@ class CategoryCard extends StatefulWidget {
   final List<Item> items;
   final Category? category;
   final Set<int>? packedItemIds;
-  final void Function(Item item, bool packed)? onTogglePacked;
+  final void Function(Item item, bool packed, int? quantity)? onTogglePacked;
+
+  /// With [packedItemIds]: a checkbox on the card itself packs or unpacks
+  /// every item shown in it at once (Инвентарь).
+  final void Function(List<Item> items, bool packed)? onToggleAllPacked;
   final void Function(Item item)? onEditItem;
   final void Function(Item item)? onDuplicateItem;
   final String? destructiveActionLabel;
@@ -64,6 +72,16 @@ class CategoryCard extends StatefulWidget {
   final bool destructiveActionDangerous;
   final void Function(Category category)? onEditCategory;
   final void Function(Category category)? onDeleteCategory;
+
+  /// What [onDeleteCategory] is called in the menu — "Удалить" by default;
+  /// on Главная it's "Убрать из похода", which isn't dangerous (red) at all.
+  final String? deleteCategoryLabel;
+  final bool deleteCategoryDangerous;
+
+  /// The "Неразобранное" card's one action, under [deleteCategoryLabel] —
+  /// on Главная, taking all its gear off the trip. It isn't a real category,
+  /// so there's nothing to edit or delete.
+  final VoidCallback? onRemoveUncategorized;
 
   /// Offered when the category is expanded but has nothing in it yet —
   /// opens adding an item straight into this category, instead of an
@@ -84,9 +102,8 @@ class _CategoryCardState extends State<CategoryCard> {
 
   Future<void> _showCategoryMenu(BuildContext context) async {
     final category = widget.category;
-    if (category == null) return;
-    final canEdit = widget.onEditCategory != null;
-    final canDelete = widget.onDeleteCategory != null;
+    final canEdit = category != null && widget.onEditCategory != null;
+    final canDelete = category != null ? widget.onDeleteCategory != null : widget.onRemoveUncategorized != null;
     if (!canEdit && !canDelete) return;
 
     final box = context.findRenderObject()! as RenderBox;
@@ -104,12 +121,39 @@ class _CategoryCardState extends State<CategoryCard> {
         if (canDelete)
           PopupMenuItem(
             value: 'delete',
-            child: Text(context.l10n.delete, style: TextStyle(color: AppColors.overWeight)),
+            child: Text(
+              widget.deleteCategoryLabel ?? context.l10n.delete,
+              style: TextStyle(
+                color: widget.deleteCategoryDangerous ? AppColors.overWeight : AppColors.textPrimary,
+              ),
+            ),
           ),
       ],
     );
-    if (selected == 'edit') widget.onEditCategory?.call(category);
-    if (selected == 'delete') widget.onDeleteCategory?.call(category);
+    if (selected == 'edit') widget.onEditCategory?.call(category!);
+    if (selected == 'delete') {
+      if (category != null) {
+        widget.onDeleteCategory?.call(category);
+      } else {
+        widget.onRemoveUncategorized?.call();
+      }
+    }
+  }
+
+  /// The card's own checkbox: empty — nothing of it packed, a dash — some,
+  /// a dot — all. Tapping packs everything (or, when all is packed,
+  /// nothing).
+  Widget? get _wholeCategoryToggle {
+    final packed = widget.packedItemIds;
+    final toggle = widget.onToggleAllPacked;
+    if (packed == null || toggle == null || widget.items.isEmpty) return null;
+    final count = widget.items.where((i) => packed.contains(i.id)).length;
+    final all = count == widget.items.length;
+    return AppCheckbox(
+      value: all,
+      partial: count > 0 && !all,
+      onChanged: (v) => toggle(widget.items, v),
+    );
   }
 
   @override
@@ -138,11 +182,12 @@ class _CategoryCardState extends State<CategoryCard> {
           InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () => setState(() => _expanded = !_expanded),
-            onLongPress: widget.category == null ? null : () => _showCategoryMenu(context),
+            onLongPress: () => _showCategoryMenu(context),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: [
+                  if (_wholeCategoryToggle case final toggle?) ...[toggle, const SizedBox(width: 8)],
                   Container(
                     width: 30,
                     height: 30,
@@ -291,12 +336,42 @@ class _ItemRow extends StatelessWidget {
   /// already the trip's).
   final int? ownedQuantity;
   final void Function(Item item, int quantity)? onTripQuantityChanged;
-  final void Function(Item item, bool packed)? onTogglePacked;
+  final void Function(Item item, bool packed, int? quantity)? onTogglePacked;
   final void Function(Item item)? onEdit;
   final void Function(Item item)? onDuplicate;
   final String? destructiveLabel;
   final void Function(Item item)? onDestructive;
   final bool destructiveDangerous;
+
+  /// Ticking something owned more than once asks how many go — 2 of the 5
+  /// chocolate bars — right next to the checkbox. Tapping away packs none.
+  Future<void> _togglePacked(BuildContext checkboxContext, bool packed) async {
+    final toggle = onTogglePacked;
+    if (toggle == null) return;
+    if (!packed || item.quantity <= 1) return toggle(item, packed, null);
+
+    final box = checkboxContext.findRenderObject()! as RenderBox;
+    final overlay = Navigator.of(checkboxContext).overlay!.context.findRenderObject()! as RenderBox;
+    final topLeft = box.localToGlobal(Offset(0, box.size.height), ancestor: overlay);
+    final bottomRight = box.localToGlobal(box.size.bottomRight(Offset.zero), ancestor: overlay);
+    final l = checkboxContext.l10n;
+    final selected = await showMenu<int>(
+      context: checkboxContext,
+      position: RelativeRect.fromRect(Rect.fromPoints(topLeft, bottomRight), Offset.zero & overlay.size),
+      items: [
+        PopupMenuItem<int>(
+          enabled: false,
+          height: 36,
+          child: Text(l.howManyToTake, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+        ),
+        for (var n = 1; n <= item.quantity; n++)
+          PopupMenuItem(value: n, child: Text(n == item.quantity ? l.takeAll(n) : l.takeN(n))),
+      ],
+    );
+    // All of them is stored as "all", so raising the closet count later
+    // carries through to the trip.
+    if (selected != null) toggle(item, true, selected == item.quantity ? null : selected);
+  }
 
   Future<void> _showActionMenu(BuildContext context) async {
     final canEdit = onEdit != null;
@@ -375,9 +450,11 @@ class _ItemRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (hasCheckbox) ...[
-                  AppCheckbox(
-                    value: packed!,
-                    onChanged: (v) => onTogglePacked?.call(item, v),
+                  Builder(
+                    builder: (checkboxContext) => AppCheckbox(
+                      value: packed!,
+                      onChanged: (v) => _togglePacked(checkboxContext, v),
+                    ),
                   ),
                   const SizedBox(width: leadSpacing),
                 ],

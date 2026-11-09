@@ -11,11 +11,14 @@ import 'theme.dart';
 /// trip (the active one checked), then "Все походы". Picking one makes it
 /// active. Shared by Главная's title and Инвентарь's "Собираю для" line.
 Future<void> showTripSwitcherMenu(BuildContext context, WidgetRef ref, Trip current) async {
-  final trips = ref.read(tripsProvider).value ?? const <Trip>[];
   final box = context.findRenderObject()! as RenderBox;
   final overlay = Navigator.of(context).overlay!.context.findRenderObject()! as RenderBox;
   final topLeft = box.localToGlobal(Offset(0, box.size.height), ancestor: overlay);
   final bottomRight = box.localToGlobal(box.size.bottomRight(Offset.zero), ancestor: overlay);
+  // Every screen with a switcher watches tripsProvider, so the list is
+  // loaded by now. (Awaiting its future instead hung when nothing watched
+  // it: an unwatched provider never loads.)
+  final trips = ref.read(tripsProvider).value ?? const <Trip>[];
 
   final selected = await showMenu<int>(
     context: context,

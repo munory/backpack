@@ -23,7 +23,7 @@ portfolio project. The server is a separate repo at `C:\learning\backpack-server
   or `.env`.**
 - **The database only grows.** Real installs exist: every schema change is a
   new `schemaVersion` with an additive `if (from < N)` step in `onUpgrade` —
-  never wipe or re-seed. Current schema: **21**. After editing tables run
+  never wipe or re-seed. Current schema: **22**. After editing tables run
   `dart run build_runner build`.
 - **Every UI string goes through l10n** — `lib/l10n/app_ru.arb` and
   `app_en.arb`, both. After editing ARB files run `flutter pub get` (not a

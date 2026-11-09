@@ -1,11 +1,9 @@
 {
   "@@locale": "en",
-
   "navHome": "Home",
   "navInventory": "Inventory",
   "navTrips": "Trips",
   "navProfile": "Profile",
-
   "cancel": "Cancel",
   "save": "Save",
   "create": "Create",
@@ -15,35 +13,64 @@
   "gotIt": "Got it",
   "all": "All",
   "nOfM": "{n} of {m}",
-  "@nOfM": {"placeholders": {"n": {"type": "int"}, "m": {"type": "int"}}},
-
+  "@nOfM": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
   "itemCount": "{count, plural, =1{1 item} other{{count} items}}",
-  "@itemCount": {"placeholders": {"count": {"type": "int"}}},
+  "@itemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "categoryCount": "{count, plural, =1{1 category} other{{count} categories}}",
-  "@categoryCount": {"placeholders": {"count": {"type": "int"}}},
+  "@categoryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "quantitySuffix": "(×{n})",
-  "@quantitySuffix": {"placeholders": {"n": {"type": "int"}}},
+  "@quantitySuffix": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "copyWord": "copy",
-
   "conditionReady": "Trail-ready",
   "conditionNeedsRepair": "Needs repair",
   "conditionReplace": "Needs replacing",
   "packFood": "Food",
   "packGear": "Gear",
   "packWater": "Water",
-
   "seedPacks": "Packs",
   "seedSleep": "Sleep system",
   "seedKitchen": "Kitchen",
   "seedClothing": "Clothing",
   "uncategorized": "Unsorted",
   "draft": "Draft",
-
   "categoryHasChildren": "Delete or move its subcategories first — this category still has some.",
   "categoryEmpty": "Nothing here yet",
   "addItem": "Add item",
   "takeN": "Take {n}",
-  "@takeN": {"placeholders": {"n": {"type": "int"}}},
+  "@takeN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "categoryNameRequired": "Enter a category name",
   "noCategoriesYetInfo": "There are no categories yet — create one first, and you can then make it the parent of new ones.",
   "newCategory": "New category",
@@ -54,7 +81,6 @@
   "section": "Section",
   "icon": "Icon",
   "color": "Color",
-
   "itemNameRequired": "Enter an item name",
   "weightRequired": "Enter a weight",
   "editItem": "Edit item",
@@ -69,15 +95,26 @@
   "unitsImperial": "Pounds",
   "quantity": "Quantity",
   "weightTotal": "= {weight} total",
-  "@weightTotal": {"placeholders": {"weight": {"type": "String"}}},
+  "@weightTotal": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
   "category": "Category",
   "noCategory": "No category",
   "createCategory": "New category",
   "condition": "Condition",
-
   "targetWeightTitle": "Target pack weight",
   "weightIn": "Weight ({unit})",
-  "@weightIn": {"placeholders": {"unit": {"type": "String"}}},
+  "@weightIn": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "clearTargetHint": "0 or empty removes the target",
   "emptyPackTitle": "Your pack is empty",
   "emptyPackSubtitle": "Tick gear in Inventory to add it to your pack and see its weight.",
@@ -86,19 +123,24 @@
   "changeTarget": "Change target weight",
   "baseWeightHint": "Gear and pack only — no food, water or what you wear",
   "wornOnYou": "+ {weight} worn",
-  "@wornOnYou": {"placeholders": {"weight": {"type": "String"}}},
+  "@wornOnYou": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
+  },
   "wornLabel": "Worn",
   "wornHint": "Boots, the jacket you hike in — not counted in the pack weight",
   "wornTag": "worn",
   "wornColumn": "Worn",
-  "yes": "yes",
+  "yes": "Yes",
   "removeFromTrip": "Remove from trip",
   "totalWeight": "Total",
   "baseWeight": "Base",
   "packingChecklist": "Packing checklist",
   "packDone": "All packed",
   "packingSubtitle": "Tick off what's already in your pack",
-
   "emptyInventory": "Your inventory is empty",
   "addFirstItem": "Add your first item",
   "myInventory": "My inventory",
@@ -111,15 +153,28 @@
   "heaviestFirst": "Heaviest first",
   "defaultOrder": "Default",
   "showItems": "Show ({items})",
-  "@showItems": {"placeholders": {"items": {"type": "String"}}},
+  "@showItems": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
   "packingFor": "Packing for: ",
-
   "startOver": "Start over",
   "packingHint": "Tick off what's already in your pack. The list itself is put together with the checkboxes in Inventory.",
   "allPacked": "All packed — ready to go",
   "packedProgress": "{packed} of {total} packed",
-  "@packedProgress": {"placeholders": {"packed": {"type": "int"}, "total": {"type": "int"}}},
-
+  "@packedProgress": {
+    "placeholders": {
+      "packed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "profile": "Profile",
   "appearance": "Appearance",
   "themeSystem": "System",
@@ -128,12 +183,30 @@
   "language": "Language",
   "languageSystem": "System",
   "tripCount": "{count, plural, =1{1 trip} other{{count} trips}}",
-  "@tripCount": {"placeholders": {"count": {"type": "int"}}},
+  "@tripCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "allYourGear": "All your gear",
   "attentionRepair": "{count, plural, =1{1 item needs repair} other{{count} items need repair}}",
-  "@attentionRepair": {"placeholders": {"count": {"type": "int"}}},
+  "@attentionRepair": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "attentionReplace": "{count, plural, =1{1 item to replace} other{{count} items to replace}}",
-  "@attentionReplace": {"placeholders": {"count": {"type": "int"}}},
+  "@attentionReplace": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "sectionData": "Data",
   "importFromFile": "Import from file",
   "exportExcel": "Export to Excel",
@@ -146,41 +219,94 @@
   "defaultUnit": "When no unit is given",
   "columnNone": "— none —",
   "columnN": "Column {n}",
-  "@columnN": {"placeholders": {"n": {"type": "int"}}},
+  "@columnN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "importExample": "Example",
   "next": "Next",
   "newCategoryCount": "{count, plural, =1{1 new category} other{{count} new categories}}",
-  "@newCategoryCount": {"placeholders": {"count": {"type": "int"}}},
+  "@newCategoryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "skippedRows": "{count, plural, =1{1 row skipped} other{{count} rows skipped}} — no name or weight",
-  "@skippedRows": {"placeholders": {"count": {"type": "int"}}},
+  "@skippedRows": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "duplicatesFound": "{count, plural, =1{1 item is already in your inventory} other{{count} items are already in your inventory}}",
-  "@duplicatesFound": {"placeholders": {"count": {"type": "int"}}},
+  "@duplicatesFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "duplicatesSkip": "Skip them",
   "duplicatesAdd": "Add copies",
   "alreadyHave": "already there",
   "importButton": "Import ({items})",
-  "@importButton": {"placeholders": {"items": {"type": "String"}}},
+  "@importButton": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
   "nothingToImport": "Nothing to import",
   "adjustColumns": "Adjust columns",
   "importDone": "Added: {items}",
-  "@importDone": {"placeholders": {"items": {"type": "String"}}},
+  "@importDone": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
   "importReadError": "Couldn't read the file. Use .csv or .xlsx — an old .xls can be saved as .xlsx in Excel.",
   "saveToPhone": "Save to phone",
   "sendTo": "Send…",
   "fileSaved": "File saved",
   "colWeightEach": "Weight each, {unit}",
-  "@colWeightEach": {"placeholders": {"unit": {"type": "String"}}},
+  "@colWeightEach": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "colWeightTotal": "Total weight, {unit}",
-  "@colWeightTotal": {"placeholders": {"unit": {"type": "String"}}},
+  "@colWeightTotal": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "sectionSettings": "Settings",
   "sectionAbout": "About",
   "version": "Version {version}",
-  "@version": {"placeholders": {"version": {"type": "String"}}},
+  "@version": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "clearAllData": "Delete all data",
   "clearAllTitle": "Delete all data?",
   "clearAllBody": "All items, categories and trips will be deleted for good. Your settings stay.",
   "clearAllConfirm": "Delete everything",
-
   "tripDates": "Trip dates",
   "editTrip": "Edit trip",
   "newTrip": "New trip",
@@ -190,20 +316,44 @@
   "pickDates": "Pick dates",
   "clearDates": "Clear dates",
   "targetOptional": "Target pack weight, {unit} (optional)",
-  "@targetOptional": {"placeholders": {"unit": {"type": "String"}}},
+  "@targetOptional": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
   "startFrom": "Start from",
   "emptyList": "Empty list",
   "listOfTrip": "List from “{name}”",
-  "@listOfTrip": {"placeholders": {"name": {"type": "String"}}},
+  "@listOfTrip": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "createTrip": "Create trip",
   "noTrips": "No trips yet",
   "noTripsSubtitle": "Create a trip to put together its gear list and keep an eye on the weight.",
   "myTrips": "My trips",
   "archive": "Archive · {n}",
-  "@archive": {"placeholders": {"n": {"type": "int"}}},
+  "@archive": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "turnIntoTrip": "Turn into a trip",
   "deleteTripTitle": "Delete “{name}”?",
-  "@deleteTripTitle": {"placeholders": {"name": {"type": "String"}}},
+  "@deleteTripTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "deleteTripBody": "This trip's list will be deleted. The items themselves stay in Inventory.",
   "active": "Active",
   "allTrips": "All trips",
@@ -262,7 +412,48 @@
   "addName": "Add your name",
   "syncing": "Syncing…",
   "syncedAt": "Synced at {time}",
-  "@syncedAt": {"placeholders":{"time":{"type":"String"}}},
+  "@syncedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "syncOffline": "Offline — will sync later",
-  "syncFailed": "Couldn’t sync — will try again later"
+  "syncFailed": "Couldn’t sync — will try again later",
+  "howManyToTake": "How many to take?",
+  "takeAll": "Take all ({n})",
+  "@takeAll": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "saveChangesTitle": "Save changes?",
+  "dontSave": "Don’t save",
+  "moreActions": "More",
+  "draftNameNote": "Give the draft a name to turn it into a trip.",
+  "selectTrip": "Choose",
+  "deleteItemTitle": "Delete “{name}”?",
+  "cantBeUndone": "This can’t be undone.",
+  "dontAskAgain": "Don’t ask again",
+  "deleteCategoryTitle": "Delete the “{name}” category?",
+  "deleteCategoryBody": "Its gear stays in your inventory, under Unsorted.",
+  "askBeforeDeletingItems": "Ask before deleting an item",
+  "no": "No",
+  "@deleteItemTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteCategoryTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

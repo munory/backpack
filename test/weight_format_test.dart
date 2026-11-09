@@ -29,6 +29,19 @@ void main() {
     expect(formatWeightIn(6000, unit: WeightUnit.imperial, l: ru), '13,2 фнт');
   });
 
+  test('a weight and its target share one unit, picked by the bigger', () {
+    expect(formatWeightPairIn(0, 20000, unit: WeightUnit.metric, l: ru), ('0 кг', '20 кг'));
+    // Light things aren't rounded away to "0,0".
+    expect(formatWeightPairIn(40, 23000, unit: WeightUnit.metric, l: ru), ('0,04 кг', '23 кг'));
+    expect(formatWeightPairIn(3, 23000, unit: WeightUnit.metric, l: ru), ('0,01 кг', '23 кг'));
+    expect(formatWeightPairIn(1540, 20000, unit: WeightUnit.metric, l: ru), ('1,54 кг', '20 кг'));
+    // Over the target: the weight decides.
+    expect(formatWeightPairIn(1500, 800, unit: WeightUnit.metric, l: ru), ('1,5 кг', '0,8 кг'));
+    // Both light: both in grams.
+    expect(formatWeightPairIn(340, 900, unit: WeightUnit.metric, l: ru), ('340 г', '900 г'));
+    expect(formatWeightPairIn(200, 9000, unit: WeightUnit.imperial, l: en), ('0.44 lb', '19.84 lb'));
+  });
+
   test('the language picks the unit until the user does', () {
     expect(defaultWeightUnit('ru'), WeightUnit.metric);
     expect(defaultWeightUnit('en'), WeightUnit.imperial);

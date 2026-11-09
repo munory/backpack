@@ -1,7 +1,7 @@
 import 'package:backpack/common/text_format.dart';
 import 'package:backpack/data/database.dart';
 import 'package:backpack/data/providers.dart';
-import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,6 +41,81 @@ void main() {
     expect(rows[gas]!.quantity, 2);
     expect(rows.values.every((r) => !r.inBag), isTrue);
     expect(await activeId(), copy);
+  });
+
+  test('ticking 2 of 5 packs 2; ticking all of them stays "all"', () async {
+    final chocolate = await addGear('Шоколад', quantity: 5);
+    final stakes = await addGear('Колышки', quantity: 8);
+    final trip = await db.createTrip(name: 'Карелия');
+
+    await db.setItemPacked(chocolate, true, quantity: 2);
+    await db.setItemPacked(stakes, true);
+    final rows = {for (final r in await rowsOf(trip)) r.itemId: r};
+
+    expect(rows[chocolate]!.quantity, 2);
+    expect(rows[stakes]!.quantity, isNull, reason: 'all — follows the closet count if it changes');
+  });
+
+  test('taking a category off the trip takes its subcategories too, and keeps the gear', () async {
+    final kitchen = await db.into(db.categories).insert(
+          CategoriesCompanion.insert(name: 'Кухня', packType: PackType.gear),
+        );
+    final cups = await db.into(db.categories).insert(
+          CategoriesCompanion.insert(name: 'Кружки', packType: PackType.gear, parentId: Value(kitchen)),
+        );
+    Future<int> inCategory(String name, int category) => db.addItem(
+          name: name,
+          weightGrams: 100,
+          categoryId: category,
+          condition: ItemCondition.newItem,
+        );
+    final stove = await inCategory('Горелка', kitchen);
+    final cup = await inCategory('Кружка', cups);
+    final tent = await addGear('Палатка');
+    final trip = await db.createTrip(name: 'Карелия');
+    for (final id in [stove, cup, tent]) {
+      await db.setItemPacked(id, true);
+    }
+    await db.setInBag(trip, stove, true);
+
+    await db.removeCategoryFromTrip(trip, kitchen);
+    expect([for (final r in await rowsOf(trip)) r.itemId], [tent]);
+    expect(await db.select(db.categories).get(), hasLength(8), reason: 'the categories stay');
+    expect(await db.select(db.items).get(), hasLength(3), reason: 'and the gear');
+  });
+
+  test('taking "Неразобранное" off the trip takes only the gear with no category', () async {
+    final kitchen = (await db.select(db.categories).get()).first.id;
+    final loose = await addGear('Фляга');
+    final stove = await db.addItem(
+      name: 'Горелка',
+      weightGrams: 100,
+      categoryId: kitchen,
+      condition: ItemCondition.newItem,
+    );
+    final trip = await db.createTrip(name: 'Карелия');
+    await db.setItemPacked(loose, true);
+    await db.setItemPacked(stove, true);
+
+    await db.removeCategoryFromTrip(trip, null);
+    expect([for (final r in await rowsOf(trip)) r.itemId], [stove]);
+  });
+
+  test('a whole category packs at once, keeping a quantity already picked; and unpacks at once', () async {
+    final chocolate = await addGear('Шоколад', quantity: 5);
+    final nuts = await addGear('Орехи', quantity: 3);
+    final tea = await addGear('Чай');
+    final trip = await db.createTrip(name: 'Карелия');
+    await db.setItemPacked(chocolate, true, quantity: 2);
+
+    await db.setItemsPacked([chocolate, nuts, tea], true);
+    final rows = {for (final r in await rowsOf(trip)) r.itemId: r};
+    expect(rows.keys, unorderedEquals([chocolate, nuts, tea]));
+    expect(rows[chocolate]!.quantity, 2, reason: 'picked before — kept');
+    expect(rows[nuts]!.quantity, isNull, reason: 'all of them');
+
+    await db.setItemsPacked([chocolate, nuts], false);
+    expect([for (final r in await rowsOf(trip)) r.itemId], [tea]);
   });
 
   test('ticking gear with no trip yet starts a draft, which can become a trip', () async {

@@ -269,7 +269,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get wornColumn => 'Надето';
 
   @override
-  String get yes => 'да';
+  String get yes => 'Да';
 
   @override
   String get removeFromTrip => 'Убрать из похода';
@@ -817,4 +817,53 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get syncFailed => 'Не удалось синхронизировать — попробуем позже';
+
+  @override
+  String get howManyToTake => 'Сколько взять?';
+
+  @override
+  String takeAll(int n) {
+    return 'Беру все ($n)';
+  }
+
+  @override
+  String get saveChangesTitle => 'Сохранить изменения?';
+
+  @override
+  String get dontSave => 'Не сохранять';
+
+  @override
+  String get moreActions => 'Ещё';
+
+  @override
+  String get draftNameNote => 'Дай черновику название — и он станет походом.';
+
+  @override
+  String get selectTrip => 'Выбрать';
+
+  @override
+  String deleteItemTitle(String name) {
+    return 'Удалить «$name»?';
+  }
+
+  @override
+  String get cantBeUndone => 'Это нельзя отменить.';
+
+  @override
+  String get dontAskAgain => 'Больше не спрашивать';
+
+  @override
+  String deleteCategoryTitle(String name) {
+    return 'Удалить категорию «$name»?';
+  }
+
+  @override
+  String get deleteCategoryBody =>
+      'Её вещи останутся в Инвентаре, в «Неразобранном».';
+
+  @override
+  String get askBeforeDeletingItems => 'Спрашивать перед удалением вещи';
+
+  @override
+  String get no => 'Нет';
 }

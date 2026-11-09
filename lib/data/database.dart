@@ -200,6 +200,11 @@ class AppSettings extends Table {
   /// for Russian, pounds for English).
   IntColumn get weightUnit => intEnum<WeightUnit>().nullable()();
 
+  /// Ask before deleting an item? On until "Больше не спрашивать" is ticked
+  /// in that question; back on from Профиль. Categories and trips are
+  /// always asked about — too much goes with them.
+  BoolColumn get confirmItemDelete => boolean().withDefault(const Constant(true))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -217,7 +222,7 @@ class AppDatabase extends _$AppDatabase {
   final String seedLanguage;
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -314,6 +319,9 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(syncState);
             await into(syncState).insert(const SyncStateCompanion());
             await _createSyncSchema();
+          }
+          if (from < 22) {
+            await m.addColumn(appSettings, appSettings.confirmItemDelete);
           }
         },
       );
@@ -544,11 +552,13 @@ class AppDatabase extends _$AppDatabase {
   /// Adds or removes an item from the active trip's pack (creating the
   /// active trip on first use, per [ensureActiveTrip]). A backpack is just
   /// gear — no special casing here for it or any other category.
-  Future<void> setItemPacked(int itemId, bool packed) async {
+  /// [quantity] is how many of the owned units go (2 of 5 chocolate bars);
+  /// null means all of them.
+  Future<void> setItemPacked(int itemId, bool packed, {int? quantity}) async {
     final tripId = await ensureActiveTrip();
     if (packed) {
       await into(tripItems).insert(
-        TripItemsCompanion.insert(tripId: tripId, itemId: itemId),
+        TripItemsCompanion.insert(tripId: tripId, itemId: itemId, quantity: Value(quantity)),
         mode: InsertMode.insertOrIgnore,
       );
     } else {
@@ -556,6 +566,56 @@ class AppDatabase extends _$AppDatabase {
             ..where((t) => t.tripId.equals(tripId) & t.itemId.equals(itemId)))
           .go();
     }
+  }
+
+  /// Packs or unpacks several items at once — a whole category ticked in
+  /// Инвентарь. Packing takes all units of each; an item already on the
+  /// list keeps the quantity picked for it.
+  Future<void> setItemsPacked(List<int> itemIds, bool packed) {
+    return transaction(() async {
+      final tripId = await ensureActiveTrip();
+      if (packed) {
+        await batch((b) {
+          for (final id in itemIds) {
+            b.insert(
+              tripItems,
+              TripItemsCompanion.insert(tripId: tripId, itemId: id),
+              mode: InsertMode.insertOrIgnore,
+            );
+          }
+        });
+      } else {
+        await (delete(tripItems)..where((t) => t.tripId.equals(tripId) & t.itemId.isIn(itemIds))).go();
+      }
+    });
+  }
+
+  /// Takes everything in [categoryId] — and its subcategories — off the
+  /// trip's list, like unticking each item. The category and the gear stay
+  /// in the closet. A null [categoryId] is "Неразобранное": the gear with
+  /// no category.
+  Future<void> removeCategoryFromTrip(int tripId, int? categoryId) {
+    return transaction(() async {
+      if (categoryId == null) {
+        final loose = [for (final i in await (select(items)..where((i) => i.categoryId.isNull())).get()) i.id];
+        await (delete(tripItems)..where((t) => t.tripId.equals(tripId) & t.itemId.isIn(loose))).go();
+        return;
+      }
+      final all = await select(categories).get();
+      final ids = {categoryId};
+      var grew = true;
+      while (grew) {
+        final before = ids.length;
+        ids.addAll(all.where((c) => ids.contains(c.parentId)).map((c) => c.id));
+        grew = ids.length > before;
+      }
+      final itemIds = [
+        for (final i in await (select(items)..where((i) => i.categoryId.isIn(ids))).get()) i.id,
+      ];
+      await (delete(tripItems)
+            ..where((t) => t.tripId.equals(tripId) & t.itemId.isIn(itemIds)))
+          .go();
+    });
   }
 
   Future<void> updateTripTarget(int tripId, int? targetWeightGrams) {
@@ -584,6 +644,10 @@ class AppDatabase extends _$AppDatabase {
       await delete(categories).go();
       await _seedDefaultCategories(language);
     });
+  }
+
+  Future<void> updateConfirmItemDelete(bool ask) {
+    return update(appSettings).write(AppSettingsCompanion(confirmItemDelete: Value(ask)));
   }
 
   Future<void> updateWeightUnit(WeightUnit unit) {

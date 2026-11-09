@@ -551,7 +551,7 @@ abstract class AppLocalizations {
   /// No description provided for @yes.
   ///
   /// In en, this message translates to:
-  /// **'yes'**
+  /// **'Yes'**
   String get yes;
 
   /// No description provided for @removeFromTrip.
@@ -1453,6 +1453,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn’t sync — will try again later'**
   String get syncFailed;
+
+  /// No description provided for @howManyToTake.
+  ///
+  /// In en, this message translates to:
+  /// **'How many to take?'**
+  String get howManyToTake;
+
+  /// No description provided for @takeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Take all ({n})'**
+  String takeAll(int n);
+
+  /// No description provided for @saveChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes?'**
+  String get saveChangesTitle;
+
+  /// No description provided for @dontSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t save'**
+  String get dontSave;
+
+  /// No description provided for @moreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get moreActions;
+
+  /// No description provided for @draftNameNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Give the draft a name to turn it into a trip.'**
+  String get draftNameNote;
+
+  /// No description provided for @selectTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get selectTrip;
+
+  /// No description provided for @deleteItemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete “{name}”?'**
+  String deleteItemTitle(String name);
+
+  /// No description provided for @cantBeUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'This can’t be undone.'**
+  String get cantBeUndone;
+
+  /// No description provided for @dontAskAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t ask again'**
+  String get dontAskAgain;
+
+  /// No description provided for @deleteCategoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the “{name}” category?'**
+  String deleteCategoryTitle(String name);
+
+  /// No description provided for @deleteCategoryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Its gear stays in your inventory, under Unsorted.'**
+  String get deleteCategoryBody;
+
+  /// No description provided for @askBeforeDeletingItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask before deleting an item'**
+  String get askBeforeDeletingItems;
+
+  /// No description provided for @no.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get no;
 }
 
 class _AppLocalizationsDelegate

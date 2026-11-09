@@ -58,6 +58,29 @@ String formatWeightIn(int grams, {required WeightUnit unit, required AppLocaliza
   return '${n(grams / gramsPerPound)} ${l.unitLb}';
 }
 
+/// A weight and its target side by side ("1,2 кг / 20,0 кг"), both in the
+/// same unit — chosen by the bigger of the two, so a light pack against a
+/// big target doesn't read "340 г / 20,0 кг".
+(String, String) formatWeightPair(BuildContext context, int grams, int target) =>
+    formatWeightPairIn(grams, target, unit: weightUnitOf(context), l: context.l10n);
+
+(String, String) formatWeightPairIn(int grams, int target, {required WeightUnit unit, required AppLocalizations l}) {
+  final larger = grams > target ? grams : target;
+  // The bigger one decides, by the same small/big threshold as one weight.
+  final big = formatWeightIn(larger, unit: unit, l: l).endsWith(bigUnitLabel(l, unit));
+  // Up to two decimals with no trailing zeros — "0,04 кг / 23 кг": with one
+  // decimal 40 g read "0,0 кг", as if nothing were packed.
+  String one(int g) {
+    if (!big) return formatWeightIn(g, unit: unit, l: l);
+    var value = g / gramsPerBigUnit(unit);
+    // Something, however light, never shows as nothing.
+    if (g > 0 && value < 0.01) value = 0.01;
+    return '${formatInputNumber(value, languageCode: l.localeName)} ${bigUnitLabel(l, unit)}';
+  }
+
+  return (one(grams), one(target));
+}
+
 /// One decimal place, with a decimal comma in Russian.
 String formatDecimal(double value, String languageCode) {
   final s = value.toStringAsFixed(1);

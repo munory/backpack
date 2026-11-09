@@ -120,6 +120,14 @@ class ProfileScreen extends ConsumerWidget {
                 db.updateWeightUnit(v);
               },
             ),
+            // Turned off by "Больше не спрашивать" when deleting an item —
+            // this is the way back.
+            _SettingRow<bool>(
+              label: l.askBeforeDeletingItems,
+              current: ref.watch(appSettingsProvider).value?.confirmItemDelete ?? true,
+              options: {true: l.yes, false: l.no},
+              onChanged: db.updateConfirmItemDelete,
+            ),
           ]),
           _SectionLabel(l.sectionAbout),
           _Group(children: [

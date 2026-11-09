@@ -1,11 +1,9 @@
 {
   "@@locale": "ru",
-
   "navHome": "Главная",
   "navInventory": "Инвентарь",
   "navTrips": "Походы",
   "navProfile": "Профиль",
-
   "cancel": "Отмена",
   "save": "Сохранить",
   "create": "Создать",
@@ -15,26 +13,22 @@
   "gotIt": "Понятно",
   "all": "Все",
   "nOfM": "{n} из {m}",
-
   "itemCount": "{count, plural, one{{count} вещь} few{{count} вещи} other{{count} вещей}}",
   "categoryCount": "{count, plural, one{{count} категория} few{{count} категории} other{{count} категорий}}",
   "quantitySuffix": "({n} шт.)",
   "copyWord": "копия",
-
   "conditionReady": "Готово к походу",
   "conditionNeedsRepair": "Требует ремонта",
   "conditionReplace": "Под замену",
   "packFood": "Еда",
   "packGear": "Снаряжение",
   "packWater": "Вода",
-
   "seedPacks": "Рюкзаки",
   "seedSleep": "Спальная система",
   "seedKitchen": "Кухня",
   "seedClothing": "Одежда",
   "uncategorized": "Неразобранное",
   "draft": "Черновик",
-
   "categoryHasChildren": "Сначала удали или перенеси дочерние категории — у этой категории ещё есть вложенные.",
   "categoryEmpty": "Пока пусто",
   "addItem": "Добавить вещь",
@@ -49,7 +43,6 @@
   "section": "Раздел",
   "icon": "Иконка",
   "color": "Цвет",
-
   "itemNameRequired": "Введи название вещи",
   "weightRequired": "Укажи вес",
   "editItem": "Редактировать вещь",
@@ -68,7 +61,6 @@
   "noCategory": "Без категории",
   "createCategory": "Создать категорию",
   "condition": "Состояние",
-
   "targetWeightTitle": "Целевой вес рюкзака",
   "weightIn": "Вес ({unit})",
   "clearTargetHint": "0 или пусто — убрать цель",
@@ -83,14 +75,13 @@
   "wornHint": "Обувь, куртка, в которой идёшь, — не входит в вес рюкзака",
   "wornTag": "надето",
   "wornColumn": "Надето",
-  "yes": "да",
+  "yes": "Да",
   "removeFromTrip": "Убрать из похода",
   "totalWeight": "Общий вес",
   "baseWeight": "Базовый",
   "packingChecklist": "Чек-лист сборов",
   "packDone": "Рюкзак собран",
   "packingSubtitle": "Отмечай, что уже лежит в рюкзаке",
-
   "emptyInventory": "Твой инвентарь пуст",
   "addFirstItem": "Добавить первую вещь",
   "myInventory": "Мой инвентарь",
@@ -104,12 +95,10 @@
   "defaultOrder": "По умолчанию",
   "showItems": "Показать ({items})",
   "packingFor": "Собираю для: ",
-
   "startOver": "Начать заново",
   "packingHint": "Отмечай, что уже лежит в рюкзаке. Сам список вещей собирается галочками в Инвентаре.",
   "allPacked": "Всё уложено, можно в путь",
   "packedProgress": "{packed} из {total} уложено",
-
   "profile": "Профиль",
   "appearance": "Внешний вид",
   "themeSystem": "Системная",
@@ -158,7 +147,6 @@
   "clearAllTitle": "Удалить все данные?",
   "clearAllBody": "Все вещи, категории и походы удалятся безвозвратно. Настройки останутся.",
   "clearAllConfirm": "Удалить всё",
-
   "tripDates": "Даты похода",
   "editTrip": "Редактировать поход",
   "newTrip": "Новый поход",
@@ -236,7 +224,48 @@
   "addName": "Добавить имя",
   "syncing": "Синхронизация…",
   "syncedAt": "Синхронизировано в {time}",
-  "@syncedAt": {"placeholders":{"time":{"type":"String"}}},
+  "@syncedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "syncOffline": "Нет связи — синхронизируем позже",
-  "syncFailed": "Не удалось синхронизировать — попробуем позже"
+  "syncFailed": "Не удалось синхронизировать — попробуем позже",
+  "howManyToTake": "Сколько взять?",
+  "takeAll": "Беру все ({n})",
+  "@takeAll": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "saveChangesTitle": "Сохранить изменения?",
+  "dontSave": "Не сохранять",
+  "moreActions": "Ещё",
+  "draftNameNote": "Дай черновику название — и он станет походом.",
+  "selectTrip": "Выбрать",
+  "deleteItemTitle": "Удалить «{name}»?",
+  "cantBeUndone": "Это нельзя отменить.",
+  "dontAskAgain": "Больше не спрашивать",
+  "deleteCategoryTitle": "Удалить категорию «{name}»?",
+  "deleteCategoryBody": "Её вещи останутся в Инвентаре, в «Неразобранном».",
+  "askBeforeDeletingItems": "Спрашивать перед удалением вещи",
+  "no": "Нет",
+  "@deleteItemTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@deleteCategoryTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

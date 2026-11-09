@@ -19,32 +19,67 @@ class WeightBar extends StatelessWidget {
   final int totalGrams;
   final int targetGrams;
 
+  /// The narrowest a part with any weight at all is drawn — 40 g against
+  /// a 23 kg target would otherwise be less than a pixel.
+  static const minPartWidth = 6.0;
+
   @override
   Widget build(BuildContext context) {
     final fillFraction = targetGrams == 0 ? 1.0 : (totalGrams / targetGrams).clamp(0.0, 1.0);
+    final parts = [
+      for (final type in PackType.values)
+        if ((byType[type] ?? 0) > 0) (type: type, grams: byType[type]!),
+    ];
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Container(
         height: 10,
         color: AppColors.trackBackground,
-        child: FractionallySizedBox(
-          alignment: Alignment.centerLeft,
-          widthFactor: fillFraction,
-          child: Row(
-            children: [
-              for (final type in PackType.values)
-                if ((byType[type] ?? 0) > 0)
-                  Expanded(
-                    flex: byType[type]!,
-                    child: Container(color: colorForPackType(type)),
-                  ),
-            ],
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final widths = partWidths(
+              [for (final p in parts) p.grams],
+              filled: constraints.maxWidth * fillFraction,
+              available: constraints.maxWidth,
+              minWidth: minPartWidth,
+            );
+            return Row(
+              children: [
+                for (var i = 0; i < parts.length; i++)
+                  Container(width: widths[i], color: colorForPackType(parts[i].type)),
+              ],
+            );
+          },
         ),
       ),
     );
   }
+}
+
+/// How wide to draw each part of a bar [filled] pixels long: in proportion
+/// to its grams, but none narrower than [minWidth] — what the small parts
+/// gain is taken from the big ones. Stays within [available].
+@visibleForTesting
+List<double> partWidths(
+  List<int> grams, {
+  required double filled,
+  required double available,
+  required double minWidth,
+}) {
+  if (grams.isEmpty) return const [];
+  final total = grams.fold<int>(0, (a, b) => a + b);
+  final floor = grams.length * minWidth < available ? grams.length * minWidth : available;
+  final length = filled.clamp(floor, available).toDouble();
+  if (length <= grams.length * minWidth) return [for (final _ in grams) length / grams.length];
+
+  final widths = [for (final g in grams) length * g / total];
+  final lifted = [for (final w in widths) w < minWidth ? minWidth : w];
+  final excess = lifted.fold<double>(0, (a, b) => a + b) - length;
+  if (excess <= 0) return lifted;
+  // Taken from the parts above the minimum, in proportion to their room.
+  final room = lifted.fold<double>(0, (a, w) => a + (w - minWidth));
+  return [for (final w in lifted) w - (w - minWidth) / room * excess];
 }
 
 /// Food / Gear / Water legend with a color dot and weight under each label,

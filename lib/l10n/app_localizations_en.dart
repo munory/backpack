@@ -267,7 +267,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wornColumn => 'Worn';
 
   @override
-  String get yes => 'yes';
+  String get yes => 'Yes';
 
   @override
   String get removeFromTrip => 'Remove from trip';
@@ -812,4 +812,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncFailed => 'Couldn’t sync — will try again later';
+
+  @override
+  String get howManyToTake => 'How many to take?';
+
+  @override
+  String takeAll(int n) {
+    return 'Take all ($n)';
+  }
+
+  @override
+  String get saveChangesTitle => 'Save changes?';
+
+  @override
+  String get dontSave => 'Don’t save';
+
+  @override
+  String get moreActions => 'More';
+
+  @override
+  String get draftNameNote => 'Give the draft a name to turn it into a trip.';
+
+  @override
+  String get selectTrip => 'Choose';
+
+  @override
+  String deleteItemTitle(String name) {
+    return 'Delete “$name”?';
+  }
+
+  @override
+  String get cantBeUndone => 'This can’t be undone.';
+
+  @override
+  String get dontAskAgain => 'Don’t ask again';
+
+  @override
+  String deleteCategoryTitle(String name) {
+    return 'Delete the “$name” category?';
+  }
+
+  @override
+  String get deleteCategoryBody =>
+      'Its gear stays in your inventory, under Unsorted.';
+
+  @override
+  String get askBeforeDeletingItems => 'Ask before deleting an item';
+
+  @override
+  String get no => 'No';
 }
